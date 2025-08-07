@@ -7,7 +7,7 @@ export default function Home() {
     <>
       <Header />
 
-      <div className="h-screen">
+      <div className="md:h-screen">
         {/* Aqui vai a vitrine com os livros */}
         <LivrosPublicos />
       </div>
