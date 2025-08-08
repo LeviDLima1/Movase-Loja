@@ -1,4 +1,4 @@
-import LivroCard from "@/components/livrosCard/page";
+import LivroCard from "@/components/booksCard/page";
 
 export default function LivrosPublicos() {
   return (
