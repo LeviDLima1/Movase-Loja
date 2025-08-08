@@ -1,5 +1,16 @@
 import type { Metadata } from "next";
+import { Montserrat } from 'next/font/google';
 import "./globals.css";
+import { CartProvider } from '../context/CartContext';
+import { ToastProvider } from '../context/ToastContext';
+import CartModal from '../components/CartModal';
+
+// Configuração da fonte Montserrat
+const montserrat = Montserrat({ 
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  subsets: ['latin'],
+  variable: '--font-montserrat',
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -14,9 +25,14 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body
-        className={`antialiased`}
+        className={`${montserrat.variable} antialiased`}
       >
-        {children}
+        <ToastProvider>
+          <CartProvider>
+            {children}
+            <CartModal />
+          </CartProvider>
+        </ToastProvider>
       </body>
     </html>
   );

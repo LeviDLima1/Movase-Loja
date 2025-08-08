@@ -2,11 +2,10 @@ import { FaYoutube } from "react-icons/fa";
 import { AiFillInstagram } from "react-icons/ai";
 import { IoSearch } from "react-icons/io5";
 import { IoPerson } from "react-icons/io5";
-import { FaShoppingCart } from "react-icons/fa";
 
 import Logo from '../../global/LogobgNone.png'
 import NomeLogo from '../../global/NomeLogoT.png'
-
+import CartIcon from '../CartIcon';
 
 export default function Header() {
 
@@ -37,20 +36,19 @@ export default function Header() {
                     <div className="inline-flex items-center justify-center gap-2">
                         <div className="bg-white rounded-xl text-black">
                             <input type="text" placeholder="Pesquisar Livro" className="px-4 py-1 text-lg border rounded-xl border-red-700"/>
-                        </div>
+                        </div>        
                         <div className="bg-red-700 font-semibold text-xl w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
                             <button><IoSearch /></button>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-red-700 font-semibold max-lg:hidden">
-                        <div className="inline-flex items-center hover:bg-gray-200 hover:text-red-600 rounded-lg p-2 transition-all cursor-pointer">
+                        <div className="inline-flex items-center hover:bg-gray-200 hover:text-red-600 rounded-lg p-3 transition-all cursor-pointer">
                             <IoPerson className="cursor-pointer"/>
                             <button className="cursor-pointer">Login</button>
                         </div>
-                        <div className="inline-flex items-center hover:bg-gray-200 hover:text-red-600 rounded-lg p-2 transition-all cursor-pointer">
-                            <FaShoppingCart  className="cursor-pointer"/>
-                            <button className="cursor-pointer">Carrinho</button>
+                        <div className="inline-flex items-center hover:bg-gray-200 hover:text-red-600 rounded-lg transition-all cursor-pointer">
+                            <CartIcon />
                         </div>
                     </div>
                     

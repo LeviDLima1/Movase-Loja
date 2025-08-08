@@ -26,7 +26,9 @@ export default function Footer() {
 
     return(
         <>
+        <div className="bg-white h-8"></div>
         <div className="w-full py-20 bg-zinc-100">
+           
             <div className="flex flex-col text-center text-zinc-500 font-semibold bg-white rounded-xl w-[30%] py-3 px-8 mx-auto">
                 <h1 className='text-md'>Formas de pagamento</h1>
                 <div className='flex justify-between w-full'>

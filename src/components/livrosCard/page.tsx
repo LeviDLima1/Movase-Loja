@@ -1,30 +1,41 @@
+"use client"
+
 import BookFront1 from '../../global/Books/CapaLivro1Front.png'
 import BookBack1 from '../../global/Books/CapaLivro1Back.png'
 import BookFront2 from '../../global/Books/CapaLivro2Front.jpg'
-import BookBack2 from '../../global/Books/CapaLivro2Back.png'
+import BookBack2 from '../../global/Books/CapaLivro2Back.jpg'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import AddToCartButton from '../AddToCartButton'
 
 
 export default function LivroCard() {
+    const router = useRouter();
+
+    const handleLivroClick = (livroId: number) => {
+        router.push(`/livros/${livroId}`);
+    };
 
     const Livros = [
         {
             id: 1,
-            img: BookFront1,
-            titulo: 'Livro 1',
+            img1: BookFront1,
+            img2: BookBack1,
+            titulo: 'FÉ X MEDO - LUCIANO PINHEIRO',
             sinopse: 'Sinopse do livro 1',
-            autor: 'Autor 1',
-            editora: 'Editora burugudu',
-            price: '2conto'
+            autor: 'Luciano Pinheiro',
+            editora: 'Movase',
+            price: '35.00'
         },
         {
             id: 2,
-            img: BookFront2,
-            titulo: 'Livro 2',
+            img1: BookFront2,
+            img2: BookBack2,
+            titulo: 'UMA GERAÇÃO SE POSICIONA',
             sinopse: 'Sinopse do livro 2',
             autor: 'Autor 2',
-            editora: 'Editora burugudu 2',
-            price: '3conto'
+            editora: 'Juliana Prado',
+            price: '30.00'
         },
         // {
         //     id: 3,
@@ -61,37 +72,63 @@ export default function LivroCard() {
         //     editora: 'Editora burugudu 6',
         //     price: '3conto'
         // },
-        
+
     ]
 
-    return(
+    return (
         <>
-        <div className="grid grid-cols-4 max-sm:grid-cols-1 space-y-8">
-            
-        
-            {Livros.map((livro) => (
-                <div key={livro.id} className="flex flex-col items-center justify-center mx-auto bg-gray-200 w-64 h-78">
-                    <div>
-                        <Image 
-                            src={livro.img}
-                            alt={livro.titulo}
-                            width={32}
-                            height={32}
-                        />
-                    </div>
+            <div className="grid grid-cols-4 max-sm:grid-cols-1 space-y-8">
+                {Livros.map((livro) => (
+                    <div
+                        key={livro.id}
+                        className="group flex flex-col cursor-pointer bg-white items-center justify-center mx-auto shadow-[0px_0px_4px_1px_#8a1616] rounded-xl w-64 h-120"
+                    >
+                        <div className='px-4 py-6 h-full flex-col justify-between'
+                            onClick={() => handleLivroClick(livro.id)}>
+                            <div className='h-[60%] relative overflow-hidden'>
+                                <div className='relative w-full h-full'>
+                                    <Image
+                                        src={livro.img1}
+                                        alt={livro.titulo}
+                                        className='w-full transition-opacity duration-500 ease-in-out group-hover:opacity-0'
+                                    />
+                                    {livro.img2 && (
+                                        <Image
+                                            src={livro.img2}
+                                            alt={livro.titulo}
+                                            className='absolute top-0 left-0 w-full opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100'
+                                        />
+                                    )}
+                                </div>
+                            </div>
 
-                    <div>
-                        <div>
-                            <h1>{livro.titulo}</h1>
-                        </div>
-                        <div>
-                            <h1>{livro.sinopse}</h1>
+                            <div className='h-[40%] flex flex-col items-center justify-center'>
+                                <div className='text-center flex flex-col justify-between h-20 mb-12 gap-2'>
+                                    <div>
+                                        <h1 className="font-montserrat font-semibold text-md">{livro.titulo}</h1>
+                                    </div>
+                                    <div>
+                                        <h1 className="font-montserrat font-bold text-xl text-red-700">R$ {livro.price}</h1>
+                                    </div>
+                                    <div className='flex justify-center items-center'>
+                                        <AddToCartButton
+                                            livro={{
+                                                id: livro.id,
+                                                titulo: livro.titulo,
+                                                autor: livro.autor,
+                                                price: parseFloat(livro.price),
+                                                img1: livro.img1.src
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                            </div>
+
                         </div>
                     </div>
-                    
-                </div>
-            ))}
-        </div>
+                ))}
+            </div>
         </>
     )
 }

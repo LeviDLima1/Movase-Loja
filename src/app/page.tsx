@@ -9,7 +9,10 @@ export default function Home() {
 
       <div className="md:h-screen">
         {/* Aqui vai a vitrine com os livros */}
-        <LivrosPublicos />
+        <div className="p-6 w-7xl h-full max-sm:w-auto mx-auto bg-zinc-100 rounded-xl">
+          <h2 className="text-2xl font-bold mb-4 ">Livros Disponíveis</h2>
+          <LivrosPublicos />
+        </div>
       </div>
 
       <Footer />
