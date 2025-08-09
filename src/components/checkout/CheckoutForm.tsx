@@ -391,12 +391,12 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
   }, [currentStep, customerData, address, freteOptions, selectedFrete, isCalculatingFrete, isBuscandoEndereco, paymentMethod, cardData, handleCustomerChange, handleAddressChange, handlePaymentMethodChange, handleCardChange]);
 
   return (
-    <div className="lg:flex lg:space-x-8">
+    <div className="lg:flex lg:gap-8 xl:gap-12">
       {/* Barra de Progresso Lateral */}
       <ProgressBar currentStep={currentStep} />
 
       {/* Conteúdo Principal */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0 lg:pl-4">
         <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
           {/* Conteúdo da Etapa Atual */}
           {renderCurrentStep()}

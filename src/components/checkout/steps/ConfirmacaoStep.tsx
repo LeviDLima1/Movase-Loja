@@ -90,26 +90,26 @@ const ConfirmacaoStep: React.FC<ConfirmacaoStepProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
-      <div className="p-4 sm:p-6 border-b">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <div className={`w-6 h-6 sm:w-8 sm:h-8 bg-${config.color}-100 rounded-full flex items-center justify-center mr-2 sm:mr-3`}>
-            <span className="text-sm sm:text-base">{config.icon}</span>
+      <div className="p-3 sm:p-4 lg:p-6 border-b">
+        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 flex items-center">
+          <div className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-${config.color}-100 rounded-full flex items-center justify-center mr-2 sm:mr-3`}>
+            <span className="text-xs sm:text-sm lg:text-base">{config.icon}</span>
           </div>
           {config.title}
         </h3>
-        <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+        <p className="text-xs sm:text-sm text-gray-600 mt-1">{config.description}</p>
       </div>
-      <div className="p-4 sm:p-6">
-        <div className="space-y-4 sm:space-y-6">
+      <div className="p-3 sm:p-4 lg:p-6">
+        <div className="space-y-3 sm:space-y-4 lg:space-y-6">
           {dadosConfirmacao.map((secao, index) => (
             <div key={index}>
-              <h4 className="font-medium text-gray-900 mb-3">{secao.title}</h4>
-              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+              <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-3">{secao.title}</h4>
+              <div className="bg-gray-50 p-2 sm:p-3 lg:p-4 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4 text-xs sm:text-sm">
                   {secao.items.map((item, itemIndex) => (
                     <div key={itemIndex}>
                       <span className="text-gray-600">{item.label}:</span>
-                      <span className="ml-2 font-medium">{item.value}</span>
+                      <span className="ml-1 sm:ml-2 font-medium">{item.value}</span>
                     </div>
                   ))}
                 </div>

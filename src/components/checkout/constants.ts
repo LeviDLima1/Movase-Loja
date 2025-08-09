@@ -1,3 +1,9 @@
+import mastercard from '../../global/MasterIcon.png'
+import visa from '../../global/VisaIcon.png'
+import americanExpress from '../../global/AmericanIcon.png'
+import pixIcon from '../../global/Pixicon.svg'
+import boletoIcon from '../../global/Boletoicon.png'
+
 export const ESTADOS_BRASIL = [
   { value: 'AC', label: 'Acre' },
   { value: 'AL', label: 'Alagoas' },
@@ -28,27 +34,29 @@ export const ESTADOS_BRASIL = [
   { value: 'TO', label: 'Tocantins' }
 ];
 
+const bandeiras = [mastercard, visa, americanExpress, pixIcon, boletoIcon]
+
 export const METODOS_PAGAMENTO = [
   {
     id: 'credit_card',
     title: 'Cartão de Crédito',
     description: 'Pagamento à vista',
     icon: '💳',
-    colors: ['bg-blue-600', 'bg-yellow-500', 'bg-green-600']
+    bandeiras: [bandeiras[0], bandeiras[1], bandeiras[2]]
   },
   {
     id: 'boleto',
     title: 'Boleto Bancário',
     description: 'Vencimento em 3 dias',
     icon: '📄',
-    colors: ['bg-green-700']
+    bandeiras: [bandeiras[4]]
   },
   {
     id: 'pix',
     title: 'PIX',
     description: 'Pagamento instantâneo',
     icon: '📱',
-    colors: ['bg-green-500']
+    bandeiras: [bandeiras[3]]
   }
 ];
 

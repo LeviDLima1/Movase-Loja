@@ -38,7 +38,7 @@ export default function Header() {
                             <input type="text" placeholder="Pesquisar Livro" className="px-4 py-1 text-lg border rounded-xl border-red-700"/>
                         </div>        
                         <div className="bg-red-700 font-semibold text-xl w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
-                            <button><IoSearch /></button>
+                            <button className="cursor-pointer"><IoSearch /></button>
                         </div>
                     </div>
 

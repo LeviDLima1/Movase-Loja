@@ -3,6 +3,7 @@ import { Montserrat } from 'next/font/google';
 import "./globals.css";
 import { CartProvider } from '../context/CartContext';
 import { ToastProvider } from '../context/ToastContext';
+import { AdminProvider } from '../contexts/AdminContext';
 import CartModal from '../components/CartModal';
 
 // Configuração da fonte Montserrat
@@ -29,8 +30,10 @@ export default function RootLayout({
       >
         <ToastProvider>
           <CartProvider>
-            {children}
-            <CartModal />
+            <AdminProvider>
+              {children}
+              <CartModal />
+            </AdminProvider>
           </CartProvider>
         </ToastProvider>
       </body>

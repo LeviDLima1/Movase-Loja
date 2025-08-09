@@ -45,7 +45,7 @@ export default function Toast({ message, type, duration = 3000, onClose }: Toast
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          className="ml-2 text-white hover:text-gray-200 transition-colors"
+          className="ml-2 text-white hover:text-gray-200 transition-colors cursor-pointer"
         >
           ×
         </button>

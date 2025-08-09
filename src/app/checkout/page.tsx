@@ -54,16 +54,16 @@ export default function CheckoutPage() {
               Voltar para livros
             </Link>
             <h1 className="text-xl font-bold text-gray-900">Finalizar Compra</h1>
-            <div className="w-20"></div> {/* Spacer para centralizar o título */}
+            <div className="w-32"></div> {/* Spacer para centralizar o título */}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+      <div className="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8 xl:gap-12">
           {/* Formulário Principal */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-8">
             <CheckoutForm 
               onSuccess={(orderId) => {
                 console.log('Pedido realizado com ID:', orderId);
@@ -73,7 +73,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Sidebar com Resumo */}
-          <div className="lg:col-span-1 mt-8 lg:mt-17">
+          <div className="lg:col-span-4 mt-8 lg:mt-0">
             <div className="bg-white rounded-lg shadow-sm border sticky top-8">
               {/* Header do Resumo */}
               <div className="p-6 border-b">
@@ -113,7 +113,7 @@ export default function CheckoutPage() {
 
               {/* Totais */}
               <div className="p-6 border-t bg-gray-50">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-medium">R$ {total.toFixed(2)}</span>
@@ -124,7 +124,7 @@ export default function CheckoutPage() {
                       {selectedFrete ? `R$ ${selectedFrete.Valor}` : 'Calculando...'}
                     </span>
                   </div>
-                  <div className="border-t pt-2 flex justify-between text-base font-semibold">
+                  <div className="border-t pt-3 flex justify-between text-base font-semibold">
                     <span>Total</span>
                     <span className="text-red-700">R$ {totalComFrete.toFixed(2)}</span>
                   </div>
