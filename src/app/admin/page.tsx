@@ -1,471 +1,327 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  FaSearch, 
-  FaBell, 
-  FaUser, 
-  FaChartLine, 
-  FaUsers, 
-  FaShoppingCart, 
-  FaPercent,
-  FaBook,
-  FaFileAlt,
-  FaChartBar,
-  FaCog,
-  FaPlus,
-  FaEye,
-  FaEdit,
-  FaTrash,
-  FaDownload,
-  FaFilter,
-  FaArrowUp,
-  FaArrowDown,
-  FaMinus
-} from 'react-icons/fa';
-import { useAdmin } from '@/contexts/AdminContext';
-import LoadingSpinner, { Skeleton } from '@/components/ui/LoadingSpinner';
-import { formatCurrency, formatDate, formatRelativeTime, cn } from '@/lib/utils';
+  BookOpen, 
+  ShoppingCart, 
+  Users, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown,
+  Package,
+  AlertTriangle,
+  Calendar,
+  BarChart3,
+  PieChart,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight
+} from 'lucide-react';
 
-// Mock data for demonstration
-const salesData = [
-  { day: 'Seg', sales: 1200, orders: 8 },
-  { day: 'Ter', sales: 1800, orders: 12 },
-  { day: 'Qua', sales: 1400, orders: 9 },
-  { day: 'Qui', sales: 2200, orders: 15 },
-  { day: 'Sex', sales: 1900, orders: 13 },
-  { day: 'Sab', sales: 2800, orders: 18 },
-  { day: 'Dom', sales: 2400, orders: 16 }
-];
-
-const recentOrders = [
-  { id: '#001', customer: 'João Silva', product: 'Livro A', total: 89.90, status: 'Pendente', date: '2024-01-15' },
-  { id: '#002', customer: 'Maria Santos', product: 'Livro B', total: 129.90, status: 'Enviado', date: '2024-01-14' },
-  { id: '#003', customer: 'Pedro Costa', product: 'Livro C', total: 69.90, status: 'Entregue', date: '2024-01-13' },
-  { id: '#004', customer: 'Ana Oliveira', product: 'Livro D', total: 159.90, status: 'Pendente', date: '2024-01-12' }
-];
-
-const notifications = [
-  { id: 1, type: 'warning', message: 'Estoque baixo: Livro A (apenas 3 unidades)', time: '2h atrás' },
-  { id: 2, type: 'info', message: 'Novo pedido recebido: #001', time: '4h atrás' },
-  { id: 3, type: 'success', message: 'Pedido #002 enviado com sucesso', time: '6h atrás' },
-  { id: 4, type: 'error', message: 'Falha no processamento do pagamento #003', time: '8h atrás' }
-];
-
-const recentProducts = [
-  { id: 1, name: 'Livro A', price: 89.90, stock: 15, sales: 45, image: '/global/Books/CapaLivro1Front.png' },
-  { id: 2, name: 'Livro B', price: 129.90, stock: 8, sales: 32, image: '/global/Books/CapaLivro2Front.jpg' },
-  { id: 3, name: 'Livro C', price: 69.90, stock: 22, sales: 28, image: '/global/Books/CapaLivro1Front.png' },
-  { id: 4, name: 'Livro D', price: 159.90, stock: 5, sales: 18, image: '/global/Books/CapaLivro2Front.jpg' }
-];
+// Mock data para demonstração
+const mockData = {
+  vendas: {
+    hoje: 1250.50,
+    ontem: 980.25,
+    semana: 8750.75,
+    mes: 32450.00,
+    crescimento: 12.5
+  },
+  pedidos: {
+    hoje: 8,
+    ontem: 6,
+    semana: 45,
+    mes: 180,
+    pendentes: 3
+  },
+  clientes: {
+    total: 1247,
+    ativos: 1189,
+    novos: 23,
+    crescimento: 8.2
+  },
+  produtos: {
+    total: 156,
+    estoqueBaixo: 12,
+    semEstoque: 3,
+    maisVendidos: [
+      { titulo: 'O Senhor dos Anéis', vendas: 45 },
+      { titulo: 'Harry Potter', vendas: 38 },
+      { titulo: '1984', vendas: 32 },
+      { titulo: 'Dom Casmurro', vendas: 28 },
+      { titulo: 'Grande Sertão', vendas: 25 }
+    ]
+  },
+  vendasPorDia: [
+    { dia: 'Seg', valor: 1200 },
+    { dia: 'Ter', valor: 1350 },
+    { dia: 'Qua', valor: 980 },
+    { dia: 'Qui', valor: 1450 },
+    { dia: 'Sex', valor: 1650 },
+    { dia: 'Sáb', valor: 2100 },
+    { dia: 'Dom', valor: 1800 }
+  ],
+  vendasPorCategoria: [
+    { categoria: 'Ficção', valor: 45 },
+    { categoria: 'Não-Ficção', valor: 30 },
+    { categoria: 'Tecnologia', valor: 15 },
+    { categoria: 'Biografia', valor: 10 }
+  ]
+};
 
 export default function AdminDashboard() {
-  const { state, actions } = useAdmin();
-  const { stats, loading: isLoading, error } = state;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('hoje');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simular carregamento
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const getVendaValue = () => {
+    switch (selectedPeriod) {
+      case 'hoje': return mockData.vendas.hoje;
+      case 'semana': return mockData.vendas.semana;
+      case 'mes': return mockData.vendas.mes;
+      default: return mockData.vendas.hoje;
+    }
+  };
+
+  const getPedidoValue = () => {
+    switch (selectedPeriod) {
+      case 'hoje': return mockData.pedidos.hoje;
+      case 'semana': return mockData.pedidos.semana;
+      case 'mes': return mockData.pedidos.mes;
+      default: return mockData.pedidos.hoje;
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <Skeleton lines={1} className="h-16" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} lines={3} className="h-32" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <Skeleton lines={8} className="h-64 lg:col-span-2" />
-            <Skeleton lines={6} className="h-64" />
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-lg shadow">
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro ao carregar dashboard</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'Enviado': return 'bg-blue-100 text-blue-800';
-      case 'Entregue': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'warning': return '⚠️';
-      case 'info': return 'ℹ️';
-      case 'success': return '✅';
-      case 'error': return '❌';
-      default: return '📢';
-    }
-  };
-
-  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up': return <FaArrowUp className="text-green-500" />;
-      case 'down': return <FaArrowDown className="text-red-500" />;
-      default: return <FaMinus className="text-gray-500" />;
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard Administrativo</h1>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Buscar..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <FaBell className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
-                </button>
-                
-                {notificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                    <div className="py-1">
-                      {notifications.slice(0, 5).map((notification) => (
-                        <div key={notification.id} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
-                          <div className="flex items-start">
-                            <span className="text-lg mr-3">{getNotificationIcon(notification.type)}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-900">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <div className="px-4 py-2 border-t border-gray-100">
-                        <Link href="/admin/notificacoes" className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                          Ver todas as notificações
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Visão geral do seu negócio</p>
+        </div>
 
-              {/* User Profile */}
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <FaUser className="h-5 w-5 text-white" />
-                </div>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">Administrador</p>
-                  <p className="text-xs text-gray-500">admin@loja.com</p>
-                </div>
-              </div>
-            </div>
+        {/* Filtro de Período */}
+        <div className="mb-6">
+          <div className="flex space-x-2 bg-white p-1 rounded-lg shadow-sm">
+            {['hoje', 'semana', 'mes'].map((period) => (
+              <button
+                key={period}
+                onClick={() => setSelectedPeriod(period)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  selectedPeriod === period
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Métricas Principais */}
+        {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          {/* Vendas */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Receita Total</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.totalRevenue || 0)}</p>
-                <p className="text-sm text-gray-500">Este mês</p>
+                <p className="text-sm font-medium text-gray-600">Vendas</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(getVendaValue())}
+                </p>
+                <div className="flex items-center mt-2">
+                  <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                  <span className="text-sm text-green-600">
+                    +{mockData.vendas.crescimento}%
+                  </span>
+                </div>
               </div>
               <div className="p-3 bg-green-100 rounded-full">
-                <FaChartLine className="h-6 w-6 text-green-600" />
+                <DollarSign className="w-6 h-6 text-green-600" />
               </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              {getTrendIcon('up')}
-              <span className="text-green-600 font-medium ml-1">+12.5%</span>
-              <span className="text-gray-500 ml-1">vs mês anterior</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          {/* Pedidos */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total de Pedidos</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalOrders || 0}</p>
-                <p className="text-sm text-gray-500">Este mês</p>
+                <p className="text-sm font-medium text-gray-600">Pedidos</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {getPedidoValue()}
+                </p>
+                <div className="flex items-center mt-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-500 mr-1" />
+                  <span className="text-sm text-orange-600">
+                    {mockData.pedidos.pendentes} pendentes
+                  </span>
+                </div>
               </div>
               <div className="p-3 bg-blue-100 rounded-full">
-                <FaShoppingCart className="h-6 w-6 text-blue-600" />
+                <ShoppingCart className="w-6 h-6 text-blue-600" />
               </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              {getTrendIcon('up')}
-              <span className="text-green-600 font-medium ml-1">+8.2%</span>
-              <span className="text-gray-500 ml-1">vs mês anterior</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          {/* Clientes */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Novos Clientes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.newCustomers || 0}</p>
-                <p className="text-sm text-gray-500">Este mês</p>
+                <p className="text-sm font-medium text-gray-600">Clientes</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {mockData.clientes.total}
+                </p>
+                <div className="flex items-center mt-2">
+                  <Users className="w-4 h-4 text-blue-500 mr-1" />
+                  <span className="text-sm text-blue-600">
+                    +{mockData.clientes.novos} novos
+                  </span>
+                </div>
               </div>
               <div className="p-3 bg-purple-100 rounded-full">
-                <FaUsers className="h-6 w-6 text-purple-600" />
+                <Users className="w-6 h-6 text-purple-600" />
               </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              {getTrendIcon('up')}
-              <span className="text-green-600 font-medium ml-1">+15.3%</span>
-              <span className="text-gray-500 ml-1">vs mês anterior</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          {/* Produtos */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.conversionRate || 0}%</p>
-                <p className="text-sm text-gray-500">Este mês</p>
+                <p className="text-sm font-medium text-gray-600">Produtos</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {mockData.produtos.total}
+                </p>
+                <div className="flex items-center mt-2">
+                  <Package className="w-4 h-4 text-red-500 mr-1" />
+                  <span className="text-sm text-red-600">
+                    {mockData.produtos.estoqueBaixo} estoque baixo
+                  </span>
+                </div>
               </div>
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <FaPercent className="h-6 w-6 text-yellow-600" />
+              <div className="p-3 bg-orange-100 rounded-full">
+                <BookOpen className="w-6 h-6 text-orange-600" />
               </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              {getTrendIcon('up')}
-              <span className="text-green-600 font-medium ml-1">+2.1%</span>
-              <span className="text-gray-500 ml-1">vs mês anterior</span>
             </div>
           </div>
         </div>
 
-        {/* Gráfico de Vendas e Ações Rápidas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Gráficos e Relatórios */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Gráfico de Vendas */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Gráfico de Vendas dos Últimos 7 Dias</h3>
-                <p className="text-sm text-gray-500">Receita total: {formatCurrency(salesData.reduce((sum, day) => sum + day.sales, 0))}</p>
-              </div>
-              <div className="flex space-x-2">
-                <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer">
-                  <FaFilter className="h-4 w-4 inline mr-1" />
-                  Filtros
-                </button>
-                <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer">
-                  <FaDownload className="h-4 w-4 inline mr-1" />
-                  Exportar
-                </button>
-              </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Vendas da Semana</h3>
+              <BarChart3 className="w-5 h-5 text-gray-400" />
             </div>
-            
-            {/* Gráfico Simulado */}
-            <div className="h-64 flex items-end justify-between space-x-2">
-              {salesData.map((day, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-blue-100 rounded-t-sm" style={{ height: `${(day.sales / 2800) * 200}px` }}>
-                    <div className="w-full bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-colors" style={{ height: '100%' }}></div>
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600 text-center">
-                    <div className="font-medium">{day.day}</div>
-                    <div className="text-gray-500">{formatCurrency(day.sales)}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Ações Rápidas */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
             <div className="space-y-3">
-              <Link href="/admin/livros/novo" className="flex items-center p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                <FaPlus className="h-4 w-4 mr-3 text-blue-600" />
-                Adicionar Livro
-              </Link>
-              <Link href="/admin/vendas" className="flex items-center p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                <FaShoppingCart className="h-4 w-4 mr-3 text-green-600" />
-                Ver Pedidos
-              </Link>
-              <Link href="/admin/postagens/nova" className="flex items-center p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                <FaFileAlt className="h-4 w-4 mr-3 text-purple-600" />
-                Nova Postagem
-              </Link>
-              <Link href="/admin/relatorios" className="flex items-center p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                <FaChartBar className="h-4 w-4 mr-3 text-orange-600" />
-                Relatórios
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid Principal de Funcionalidades */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/admin/livros" className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
-              <FaBook className="h-6 w-6 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestão de Produtos</h3>
-            <p className="text-sm text-gray-600">Gerencie livros, estoque e categorias</p>
-          </Link>
-
-          <Link href="/admin/vendas" className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mb-4">
-              <FaShoppingCart className="h-6 w-6 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Controle de Vendas</h3>
-            <p className="text-sm text-gray-600">Acompanhe pedidos e gerencie entregas</p>
-          </Link>
-
-          <Link href="/admin/postagens" className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mb-4">
-              <FaFileAlt className="h-6 w-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestão de Conteúdo</h3>
-            <p className="text-sm text-gray-600">Crie e edite postagens do blog</p>
-          </Link>
-
-          <Link href="/admin/configuracoes" className="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mb-4">
-              <FaCog className="h-6 w-6 text-gray-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Configurações</h3>
-            <p className="text-sm text-gray-600">Configure o site e preferências</p>
-          </Link>
-        </div>
-
-        {/* Atividade Recente e Notificações */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Pedidos Recentes */}
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Pedidos Recentes</h3>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {recentOrders.map((order) => (
-                <div key={order.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{order.customer}</p>
-                      <p className="text-sm text-gray-500">{order.product}</p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm font-medium text-gray-900">{formatCurrency(order.total)}</span>
-                      <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", getStatusColor(order.status))}>
-                        {order.status}
-                      </span>
+              {mockData.vendasPorDia.map((item, index) => (
+                <div key={index} className="flex items-center">
+                  <span className="w-12 text-sm text-gray-600">{item.dia}</span>
+                  <div className="flex-1 mx-3">
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${(item.valor / Math.max(...mockData.vendasPorDia.map(v => v.valor))) * 100}%` 
+                        }}
+                      ></div>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-                    <span>{formatDate(order.date)}</span>
-                    <Link href={`/admin/vendas/${order.id}`} className="text-blue-600 hover:text-blue-800 cursor-pointer">
-                      Ver detalhes
-                    </Link>
-                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {formatCurrency(item.valor)}
+                  </span>
                 </div>
               ))}
             </div>
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-              <Link href="/admin/vendas" className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                Ver todos os pedidos →
-              </Link>
-            </div>
           </div>
 
-          {/* Notificações e Alertas */}
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Notificações e Alertas</h3>
+          {/* Gráfico de Categorias */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Vendas por Categoria</h3>
+              <PieChart className="w-5 h-5 text-gray-400" />
             </div>
-            <div className="divide-y divide-gray-200">
-              {notifications.map((notification) => (
-                <div key={notification.id} className="px-6 py-4">
-                  <div className="flex items-start">
-                    <span className="text-lg mr-3">{getNotificationIcon(notification.type)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900">{notification.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                    </div>
+            <div className="space-y-3">
+              {mockData.vendasPorCategoria.map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div 
+                      className="w-3 h-3 rounded-full mr-3"
+                      style={{
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'][index]
+                      }}
+                    ></div>
+                    <span className="text-sm text-gray-700">{item.categoria}</span>
                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-              <Link href="/admin/notificacoes" className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                Ver todas as notificações →
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Produtos em Destaque */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm border">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Produtos em Destaque</h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentProducts.map((product) => (
-                <div key={product.id} className="text-center">
-                  <div className="w-20 h-20 mx-auto mb-3 bg-gray-200 rounded-lg overflow-hidden">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-1">{product.name}</h4>
-                  <p className="text-sm text-gray-600 mb-2">{formatCurrency(product.price)}</p>
-                  <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
-                    <span>Estoque: {product.stock}</span>
-                    <span>Vendas: {product.sales}</span>
-                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {item.valor}%
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Produtos Mais Vendidos */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Produtos Mais Vendidos</h3>
+            <TrendingUp className="w-5 h-5 text-gray-400" />
+          </div>
+          <div className="space-y-3">
+            {mockData.produtos.maisVendidos.map((produto, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-sm font-bold text-blue-600">{index + 1}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{produto.titulo}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-600 mr-2">{produto.vendas} vendas</span>
+                  <Activity className="w-4 h-4 text-green-500" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
       </div>
     </div>
   );

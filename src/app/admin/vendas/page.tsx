@@ -6,6 +6,8 @@ import { FaArrowLeft, FaSearch, FaFilter, FaEye, FaCheck, FaTruck, FaFileInvoice
 import { useAdmin } from '@/contexts/AdminContext';
 import LoadingSpinner, { Skeleton, TableSkeleton } from '@/components/ui/LoadingSpinner';
 import { formatCurrency, formatDate, formatCPF, formatPhone, cn } from '@/lib/utils';
+import NotificationPanel from '@/components/ui/NotificationPanel';
+import ExportButton from '@/components/ui/ExportButton';
 
 // Importar tipos do AdminContext
 import { Order } from '@/contexts/AdminContext';
@@ -227,6 +229,18 @@ export default function AdminVendas() {
             </div>
             
             <div className="flex items-center space-x-3">
+              <NotificationPanel />
+              
+              <ExportButton
+                data={filteredPedidos}
+                filters={{
+                  searchTerm,
+                  statusFilter,
+                  dateFilter
+                }}
+                type="vendas"
+              />
+              
               <Link 
                 href="/admin/vendas/relatorios"
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"

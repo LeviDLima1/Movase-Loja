@@ -41,6 +41,7 @@ export interface Product {
   id: string;
   titulo: string;
   autor: string;
+  descricao?: string;
   preco: number;
   estoque: number;
   status: 'ativo' | 'inativo';

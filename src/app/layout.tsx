@@ -4,6 +4,8 @@ import "./globals.css";
 import { CartProvider } from '../context/CartContext';
 import { ToastProvider } from '../context/ToastContext';
 import { AdminProvider } from '../contexts/AdminContext';
+import { NotificationProvider } from '../contexts/NotificationContext';
+import { AuthProvider } from '../contexts/AuthContext';
 import CartModal from '../components/CartModal';
 
 // Configuração da fonte Montserrat
@@ -28,14 +30,18 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} antialiased`}
       >
-        <ToastProvider>
-          <CartProvider>
-            <AdminProvider>
-              {children}
-              <CartModal />
-            </AdminProvider>
-          </CartProvider>
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <CartProvider>
+              <AdminProvider>
+                <NotificationProvider>
+                  {children}
+                  <CartModal />
+                </NotificationProvider>
+              </AdminProvider>
+            </CartProvider>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

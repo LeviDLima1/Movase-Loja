@@ -36,8 +36,9 @@ const Livros = [
     }
 ]
 
-export default function LivroDetalhes({ params }: { params: { id: string } }) {
-    const livroId = parseInt(params.id)
+export default async function LivroDetalhes({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = await params;
+    const livroId = parseInt(resolvedParams.id)
     const livro = Livros.find(l => l.id === livroId)
 
     if (!livro) {

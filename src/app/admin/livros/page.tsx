@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaArrowLeft, FaPlus, FaSearch, FaEye, FaEdit, FaTrash, FaFilter, FaBook } from 'react-icons/fa';
 import { useAdmin } from '@/contexts/AdminContext';
 import LoadingSpinner, { Skeleton, TableSkeleton } from '@/components/ui/LoadingSpinner';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
+import NotificationPanel from '@/components/ui/NotificationPanel';
+import ExportButton from '@/components/ui/ExportButton';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 // Mock data for demonstration
 const mockLivros = [
@@ -70,8 +73,15 @@ export default function AdminLivros() {
   const { state, actions } = useAdmin();
   const { products, loading: isLoading, error } = state;
   const { deleteProduct } = actions;
+  const { addSuccessNotification, addErrorNotification, addEstoqueNotification } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [categoriaFilter, setCategoriaFilter] = useState('todos');
+  const [precoMinFilter, setPrecoMinFilter] = useState('');
+  const [precoMaxFilter, setPrecoMaxFilter] = useState('');
+  const [sortBy, setSortBy] = useState('titulo');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Use mock data for now, will be replaced with real data from context
   const livros = products.length > 0 ? products : mockLivros;
@@ -80,19 +90,55 @@ export default function AdminLivros() {
     const matchesSearch = livro.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          livro.autor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || livro.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCategoria = categoriaFilter === 'todos' || livro.categoria === categoriaFilter;
+    
+    const preco = livro.preco;
+    const matchesPrecoMin = !precoMinFilter || preco >= parseFloat(precoMinFilter);
+    const matchesPrecoMax = !precoMaxFilter || preco <= parseFloat(precoMaxFilter);
+    
+    return matchesSearch && matchesStatus && matchesCategoria && matchesPrecoMin && matchesPrecoMax;
+  });
+
+  // Ordenar livros
+  const sortedLivros = [...filteredLivros].sort((a, b) => {
+    let aValue: any = a[sortBy as keyof typeof a];
+    let bValue: any = b[sortBy as keyof typeof b];
+    
+    // Converter para string para comparação de texto
+    if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
   });
 
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este livro?')) {
       try {
         await deleteProduct(id);
-        // The context will handle the state update
+        addSuccessNotification('Livro Excluído', 'Livro excluído com sucesso');
       } catch (error) {
         console.error('Erro ao excluir livro:', error);
+        addErrorNotification('Erro ao Excluir', 'Erro ao excluir o livro. Tente novamente.');
       }
     }
   };
+
+  // Verificar estoque baixo e enviar notificações
+  useEffect(() => {
+    const livrosComEstoqueBaixo = livros.filter(livro => livro.estoque <= 5 && livro.estoque > 0);
+    livrosComEstoqueBaixo.forEach(livro => {
+      addEstoqueNotification(
+        `"${livro.titulo}" está com estoque baixo (${livro.estoque} unidades)`,
+        `/admin/livros/${livro.id}`
+      );
+    });
+  }, [livros, addEstoqueNotification]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -166,13 +212,29 @@ export default function AdminLivros() {
               <h1 className="text-2xl font-bold text-gray-900">Gestão de Livros</h1>
             </div>
             
-            <Link 
-              href="/admin/livros/novo"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
-            >
-              <FaPlus className="h-4 w-4 mr-2" />
-              Novo Livro
-            </Link>
+            <div className="flex items-center space-x-3">
+              <NotificationPanel />
+              
+              <ExportButton
+                data={sortedLivros}
+                filters={{
+                  searchTerm,
+                  statusFilter,
+                  categoriaFilter,
+                  precoMinFilter,
+                  precoMaxFilter
+                }}
+                type="livros"
+              />
+              
+              <Link 
+                href="/admin/livros/novo"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <FaPlus className="h-4 w-4 mr-2" />
+                Novo Livro
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -238,44 +300,133 @@ export default function AdminLivros() {
 
         {/* Search and Filters */}
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="h-5 w-5 text-gray-400" />
+          <div className="space-y-4">
+            {/* Filtros Básicos */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaSearch className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar por título ou autor..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Buscar por título ou autor..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+              </div>
+              
+              <div className="flex gap-3">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="todos">Todos os Status</option>
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+                
+                <select
+                  value={categoriaFilter}
+                  onChange={(e) => setCategoriaFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="todos">Todas as Categorias</option>
+                  <option value="Ficção">Ficção</option>
+                  <option value="Mistério">Mistério</option>
+                  <option value="Arte">Arte</option>
+                  <option value="Ciência">Ciência</option>
+                  <option value="Filosofia">Filosofia</option>
+                </select>
+                
+                <button 
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                >
+                  <FaFilter className="h-4 w-4 inline mr-2" />
+                  Filtros Avançados
+                </button>
               </div>
             </div>
-            
-            <div className="flex gap-3">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-              >
-                <option value="todos">Todos os Status</option>
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
-              </select>
-              
-              <button className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
-                <FaFilter className="h-4 w-4 inline mr-2" />
-                Filtros
-              </button>
-            </div>
+
+            {/* Filtros Avançados */}
+            {showAdvancedFilters && (
+              <div className="border-t pt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Preço Mínimo</label>
+                    <input
+                      type="number"
+                      placeholder="R$ 0,00"
+                      value={precoMinFilter}
+                      onChange={(e) => setPrecoMinFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Preço Máximo</label>
+                    <input
+                      type="number"
+                      placeholder="R$ 999,99"
+                      value={precoMaxFilter}
+                      onChange={(e) => setPrecoMaxFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                    >
+                      <option value="titulo">Título</option>
+                      <option value="autor">Autor</option>
+                      <option value="preco">Preço</option>
+                      <option value="estoque">Estoque</option>
+                      <option value="categoria">Categoria</option>
+                      <option value="dataCriacao">Data de Criação</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="asc"
+                      checked={sortOrder === 'asc'}
+                      onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Crescente</span>
+                  </label>
+                  
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="desc"
+                      checked={sortOrder === 'desc'}
+                      onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Decrescente</span>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Books Table */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -303,7 +454,7 @@ export default function AdminLivros() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLivros.map((livro) => (
+                {sortedLivros.map((livro) => (
                   <tr key={livro.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -360,17 +511,72 @@ export default function AdminLivros() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden">
+            {sortedLivros.map((livro) => (
+              <div key={livro.id} className="p-4 border-b border-gray-200 hover:bg-gray-50">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">{livro.titulo}</h3>
+                    <p className="text-sm text-gray-600 mb-2">por {livro.autor}</p>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className={getStatusBadge(livro.status)}>
+                        {livro.status.charAt(0).toUpperCase() + livro.status.slice(1)}
+                      </span>
+                      <span className={cn(
+                        'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                        getEstoqueBadge(livro.estoque)
+                      )}>
+                        {livro.estoque} unidades
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-red-600 mb-1">
+                      {formatCurrency(livro.preco)}
+                    </div>
+                    <p className="text-sm text-gray-500">{livro.categoria}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-500">ID: {livro.id}</div>
+                  <div className="flex space-x-3">
+                    <Link 
+                      href={`/admin/livros/${livro.id}`}
+                      className="text-blue-600 hover:text-blue-900 cursor-pointer p-1"
+                    >
+                      <FaEye className="h-4 w-4" />
+                    </Link>
+                    <Link 
+                      href={`/admin/livros/editar/${livro.id}`}
+                      className="text-indigo-600 hover:text-indigo-900 cursor-pointer p-1"
+                    >
+                      <FaEdit className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(livro.id)}
+                      className="text-red-600 hover:text-red-900 cursor-pointer p-1"
+                    >
+                      <FaTrash className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           
-          {filteredLivros.length === 0 && (
+          {sortedLivros.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-400 text-6xl mb-4">📚</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum livro encontrado</h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || statusFilter !== 'todos' 
+                {searchTerm || statusFilter !== 'todos' || categoriaFilter !== 'todos' || precoMinFilter || precoMaxFilter
                   ? 'Tente ajustar os filtros de busca.' 
                   : 'Comece adicionando seu primeiro livro.'}
               </p>
-              {!searchTerm && statusFilter === 'todos' && (
+              {!searchTerm && statusFilter === 'todos' && categoriaFilter === 'todos' && !precoMinFilter && !precoMaxFilter && (
                 <Link 
                   href="/admin/livros/novo"
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
