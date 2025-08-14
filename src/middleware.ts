@@ -1,31 +1,29 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { authConfig, isRouteProtectionEnabled, isProtectedRoute } from './config/auth';
 
 export function middleware(request: NextRequest) {
+  // Verificar se a proteção de rotas está habilitada
+  if (!isRouteProtectionEnabled()) {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
   
-  // Rotas que precisam de autenticação
-  const protectedRoutes = ['/admin'];
-  
   // Verificar se a rota atual precisa de proteção
-  const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
-  );
-  
-  if (isProtectedRoute) {
+  if (isProtectedRoute(pathname)) {
     // Verificar se há token de autenticação
-    const token = request.cookies.get('auth_token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.cookies.get(authConfig.tokenConfig.cookieName)?.value || 
+                  request.headers.get('authorization')?.replace(authConfig.tokenConfig.headerPrefix, '');
     
     // Se não há token, redirecionar para login
     if (!token) {
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = new URL(authConfig.redirects.login, request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
     
     // Em produção, você validaria o token aqui
-    // Por enquanto, vamos permitir o acesso
   }
   
   return NextResponse.next();

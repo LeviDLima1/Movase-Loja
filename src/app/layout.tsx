@@ -7,6 +7,7 @@ import { AdminProvider } from '../contexts/AdminContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { AuthProvider } from '../contexts/AuthContext';
 import CartModal from '../components/CartModal';
+import FloatingCart from '../components/FloatingCart';
 
 // Configuração da fonte Montserrat
 const montserrat = Montserrat({ 
@@ -37,6 +38,7 @@ export default function RootLayout({
                 <NotificationProvider>
                   {children}
                   <CartModal />
+                  <FloatingCart />
                 </NotificationProvider>
               </AdminProvider>
             </CartProvider>

@@ -2,6 +2,7 @@ import React from 'react';
 import { STEP_CONFIG } from '../constants';
 import { UserAddress } from '../../../types/cart';
 import { CorreiosResponse } from '../../../correios';
+import { CheckCircle, User, MapPin, Truck, CreditCard, Shield } from 'lucide-react';
 
 interface ConfirmacaoStepProps {
   customerData: {
@@ -35,7 +36,10 @@ const ConfirmacaoStep: React.FC<ConfirmacaoStepProps> = ({
 
   const dadosConfirmacao = [
     {
-      title: '👤 Dados Pessoais',
+      title: 'Dados Pessoais',
+      icon: <User className="w-5 h-5" />,
+      color: 'from-red-500 to-orange-500',
+      bgColor: 'from-red-50 to-orange-50',
       items: [
         { label: 'Nome', value: customerData.name },
         { label: 'E-mail', value: customerData.email },
@@ -44,7 +48,10 @@ const ConfirmacaoStep: React.FC<ConfirmacaoStepProps> = ({
       ]
     },
     {
-      title: '📍 Endereço de Entrega',
+      title: 'Endereço de Entrega',
+      icon: <MapPin className="w-5 h-5" />,
+      color: 'from-blue-500 to-indigo-600',
+      bgColor: 'from-blue-50 to-indigo-50',
       items: [
         { 
           label: 'Endereço', 
@@ -56,7 +63,10 @@ const ConfirmacaoStep: React.FC<ConfirmacaoStepProps> = ({
       ]
     },
     {
-      title: '🚚 Frete Selecionado',
+      title: 'Frete Selecionado',
+      icon: <Truck className="w-5 h-5" />,
+      color: 'from-yellow-500 to-orange-500',
+      bgColor: 'from-yellow-50 to-orange-50',
       items: [
         { 
           label: 'Serviço', 
@@ -73,7 +83,10 @@ const ConfirmacaoStep: React.FC<ConfirmacaoStepProps> = ({
       ]
     },
     {
-      title: '💳 Método de Pagamento',
+      title: 'Método de Pagamento',
+      icon: <CreditCard className="w-5 h-5" />,
+      color: 'from-purple-500 to-indigo-600',
+      bgColor: 'from-purple-50 to-indigo-50',
       items: [
         { 
           label: 'Forma', 
@@ -89,33 +102,64 @@ const ConfirmacaoStep: React.FC<ConfirmacaoStepProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      <div className="p-3 sm:p-4 lg:p-6 border-b">
-        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 flex items-center">
-          <div className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-${config.color}-100 rounded-full flex items-center justify-center mr-2 sm:mr-3`}>
-            <span className="text-xs sm:text-sm lg:text-base">{config.icon}</span>
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      {/* Header com gradiente */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-6 text-white">
+        <div className="flex items-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center mr-3 sm:mr-4 backdrop-blur-sm">
+            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          {config.title}
-        </h3>
-        <p className="text-xs sm:text-sm text-gray-600 mt-1">{config.description}</p>
+          <div>
+            <h3 className="text-xl sm:text-2xl font-bold">{config.title}</h3>
+            <p className="text-green-100 mt-1 text-base sm:text-lg">{config.description}</p>
+          </div>
+        </div>
       </div>
-      <div className="p-3 sm:p-4 lg:p-6">
-        <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+
+      {/* Conteúdo */}
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="space-y-4 sm:space-y-6">
           {dadosConfirmacao.map((secao, index) => (
-            <div key={index}>
-              <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-3">{secao.title}</h4>
-              <div className="bg-gray-50 p-2 sm:p-3 lg:p-4 rounded-lg">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4 text-xs sm:text-sm">
+            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Header da seção */}
+              <div className={`bg-gradient-to-r ${secao.color} p-4 text-white`}>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                    {secao.icon}
+                  </div>
+                  <h4 className="text-lg font-bold">{secao.title}</h4>
+                </div>
+              </div>
+              
+              {/* Conteúdo da seção */}
+              <div className={`bg-gradient-to-r ${secao.bgColor} p-6`}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {secao.items.map((item, itemIndex) => (
-                    <div key={itemIndex}>
-                      <span className="text-gray-600">{item.label}:</span>
-                      <span className="ml-1 sm:ml-2 font-medium">{item.value}</span>
+                    <div key={itemIndex} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                      <span className="text-sm font-medium text-gray-700">{item.label}:</span>
+                      <span className="text-sm font-semibold text-gray-900 text-right">{item.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Informações finais */}
+        <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Shield className="w-4 h-4 text-green-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-green-900 mb-1">Pronto para Finalizar!</h4>
+              <p className="text-sm text-green-700 leading-relaxed">
+                Revise todos os dados acima. Após confirmar, seu pedido será processado 
+                e você receberá uma confirmação por e-mail. Obrigado por escolher a MOVASE!
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

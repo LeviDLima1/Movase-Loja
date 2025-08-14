@@ -6,12 +6,13 @@ import Toast from '../components/Toast';
 interface ToastMessage {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   duration?: number;
+  title?: string;
 }
 
 interface ToastContextType {
-  showToast: (message: string, type: 'success' | 'error' | 'info', duration?: number) => void;
+  showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning', duration?: number, title?: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -19,9 +20,14 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info', duration = 3000) => {
+  const showToast = useCallback((
+    message: string, 
+    type: 'success' | 'error' | 'info' | 'warning', 
+    duration = 4000,
+    title?: string
+  ) => {
     const id = Math.random().toString(36).substr(2, 9);
-    const newToast: ToastMessage = { id, message, type, duration };
+    const newToast: ToastMessage = { id, message, type, duration, title };
     
     setToasts(prev => [...prev, newToast]);
   }, []);
@@ -33,15 +39,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {toasts.map(toast => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
-          onClose={() => removeToast(toast.id)}
-        />
-      ))}
+      <div className="fixed top-4 right-4 z-50 space-y-3">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            title={toast.title}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </div>
     </ToastContext.Provider>
   );
 }

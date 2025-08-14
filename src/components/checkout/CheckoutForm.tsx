@@ -12,7 +12,6 @@ import {
   PagSeguroOrder 
 } from '../../services/pagseguro';
 import { buscarEnderecoPorCEP, formatarCEP } from '../../services/viacep';
-import FormaEntregaSelector from '../FormaEntregaSelector';
 import { UserAddress } from '../../types/cart';
 
 // Componentes do checkout
@@ -20,6 +19,7 @@ import ProgressBar from './ProgressBar';
 import NavigationButtons from './NavigationButtons';
 import DadosPessoaisStep from './steps/DadosPessoaisStep';
 import EnderecoStep from './steps/EnderecoStep';
+import FreteStep from './steps/FreteStep';
 import PagamentoStep from './steps/PagamentoStep';
 import ConfirmacaoStep from './steps/ConfirmacaoStep';
 
@@ -356,7 +356,7 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
 
       case 'frete':
         return (
-          <FormaEntregaSelector
+          <FreteStep
             opcoes={freteOptions}
             selecionado={selectedFrete}
             onSelecionar={setSelectedFrete}
@@ -391,13 +391,13 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
   }, [currentStep, customerData, address, freteOptions, selectedFrete, isCalculatingFrete, isBuscandoEndereco, paymentMethod, cardData, handleCustomerChange, handleAddressChange, handlePaymentMethodChange, handleCardChange]);
 
   return (
-    <div className="lg:flex lg:gap-8 xl:gap-12">
+    <div className="lg:flex">
       {/* Barra de Progresso Lateral */}
       <ProgressBar currentStep={currentStep} />
 
       {/* Conteúdo Principal */}
-      <div className="flex-1 min-w-0 lg:pl-4">
-        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+      <div className="flex-1">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 xl:space-y-8">
           {/* Conteúdo da Etapa Atual */}
           {renderCurrentStep()}
 

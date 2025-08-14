@@ -2,6 +2,7 @@ import React from 'react';
 import InputField from '../InputField';
 import { STEP_CONFIG, METODOS_PAGAMENTO, CAMPOS_CARTAO } from '../constants';
 import Image from 'next/image';
+import { CreditCard, QrCode, FileText, Shield, Lock } from 'lucide-react';
 
 interface PagamentoStepProps {
   paymentMethod: 'credit_card' | 'boleto' | 'pix';
@@ -26,39 +27,75 @@ const PagamentoStep: React.FC<PagamentoStepProps> = ({
 }) => {
   const config = STEP_CONFIG['pagamento'];
 
+  const getMethodIcon = (methodId: string) => {
+    switch (methodId) {
+      case 'credit_card':
+        return <CreditCard className="w-5 h-5" />;
+      case 'pix':
+        return <QrCode className="w-5 h-5" />;
+      case 'boleto':
+        return <FileText className="w-5 h-5" />;
+      default:
+        return <CreditCard className="w-5 h-5" />;
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      <div className="p-3 sm:p-4 lg:p-6 border-b">
-        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 flex items-center">
-          <div className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-${config.color}-100 rounded-full flex items-center justify-center mr-2 sm:mr-3`}>
-            <span className="text-xs sm:text-sm lg:text-base">{config.icon}</span>
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      {/* Header com gradiente */}
+      <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 sm:p-6 text-white">
+        <div className="flex items-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center mr-3 sm:mr-4 backdrop-blur-sm">
+            <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          {config.title}
-        </h3>
-        <p className="text-xs sm:text-sm text-gray-600 mt-1">{config.description}</p>
+          <div>
+            <h3 className="text-xl sm:text-2xl font-bold">{config.title}</h3>
+            <p className="text-purple-100 mt-1 text-base sm:text-lg">{config.description}</p>
+          </div>
+        </div>
       </div>
-      <div className="p-3 sm:p-4 lg:p-6">
-        <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+
+      {/* Conteúdo */}
+      <div className="p-4 sm:p-6 lg:p-8">
+        {/* Métodos de Pagamento */}
+        <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           {METODOS_PAGAMENTO.map(metodo => (
-            <label key={metodo.id} className="flex items-center p-2 sm:p-3 lg:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <input
-                type="radio"
-                name="payment"
-                value={metodo.id}
-                checked={paymentMethod === metodo.id}
-                onChange={(e) => onPaymentMethodChange(e.target.value as any)}
-                className="mr-2 sm:mr-3 lg:mr-4 w-3 h-3 sm:w-4 sm:h-4 text-red-600 focus:ring-red-500 cursor-pointer"
-              />
-              <div className="flex-1">
-                <div className="text-sm sm:text-base font-medium text-gray-900">{metodo.title}</div>
-                <div className="text-xs sm:text-sm text-gray-600">{metodo.description}</div>
-              </div>
-              <div className="flex space-x-1 sm:space-x-2">
-                {metodo.bandeiras.map((bandeira, index) => (
-                  <div key={index} className={`w-4 h-3 sm:w-6 sm:h-4 lg:w-8 lg:h-5 rounded flex flex-col items-center justify-center`}>
-                    <Image src={bandeira} alt={metodo.title} width={32} height={32} />
+            <label 
+              key={metodo.id} 
+              className={`block p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.02] ${
+                paymentMethod === metodo.id
+                  ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-indigo-50 shadow-lg'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  name="payment"
+                  value={metodo.id}
+                  checked={paymentMethod === metodo.id}
+                  onChange={(e) => onPaymentMethodChange(e.target.value as any)}
+                  className="mr-4 w-5 h-5 text-purple-600 focus:ring-purple-500"
+                />
+                
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                    {getMethodIcon(metodo.id)}
                   </div>
-                ))}
+                  
+                  <div className="flex-1">
+                    <div className="text-lg font-bold text-gray-900 mb-1">{metodo.title}</div>
+                    <div className="text-sm text-gray-600">{metodo.description}</div>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    {metodo.bandeiras.map((bandeira, index) => (
+                      <div key={index} className="w-8 h-5 rounded flex items-center justify-center bg-white p-1 shadow-sm">
+                        <Image src={bandeira} alt={metodo.title} width={24} height={16} className="object-contain" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </label>
           ))}
@@ -66,29 +103,65 @@ const PagamentoStep: React.FC<PagamentoStepProps> = ({
 
         {/* Dados do Cartão */}
         {paymentMethod === 'credit_card' && (
-          <div className="mt-4 sm:mt-6 p-3 sm:p-4 lg:p-6 border border-gray-200 rounded-lg bg-gray-50">
-            <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-3 sm:mb-4 flex items-center">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Dados do Cartão
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-8 rounded-xl border border-gray-200">
+            <div className="flex items-center mb-6">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center mr-3">
+                <CreditCard className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900">Dados do Cartão</h4>
+                <p className="text-sm text-gray-600">Preencha as informações do seu cartão</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {CAMPOS_CARTAO.map(campo => (
-                <InputField
-                  key={campo.id}
-                  label={campo.label}
-                  value={cardData[campo.id as keyof typeof cardData]}
-                  onChange={(value) => onCardChange(campo.id, value)}
-                  placeholder={campo.placeholder}
-                  maxLength={campo.maxLength}
-                  required
-                  colSpan={campo.colSpan || ''}
-                />
+                <div key={campo.id} className={campo.colSpan === 'lg:col-span-2' ? 'lg:col-span-2' : ''}>
+                  <InputField
+                    label={campo.label}
+                    value={cardData[campo.id as keyof typeof cardData]}
+                    onChange={(value) => onCardChange(campo.id, value)}
+                    placeholder={campo.placeholder}
+                    maxLength={campo.maxLength}
+                    required
+                    className="bg-white shadow-sm hover:shadow-md transition-shadow"
+                  />
+                </div>
               ))}
+            </div>
+
+            {/* Informações de segurança */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <h5 className="text-sm font-semibold text-green-900">Pagamento Seguro</h5>
+                  <p className="text-sm text-green-700">
+                    Seus dados são protegidos com criptografia SSL de 256 bits
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Informações de segurança geral */}
+        <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Lock className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-blue-900 mb-1">Ambiente Seguro</h4>
+              <p className="text-sm text-blue-700 leading-relaxed">
+                Todos os pagamentos são processados em ambiente seguro. 
+                Suas informações estão protegidas e não serão compartilhadas.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
