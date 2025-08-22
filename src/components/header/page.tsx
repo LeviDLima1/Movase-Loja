@@ -27,12 +27,14 @@ import {
 import Logo from '../../global/LogobgNone.png'
 import NomeLogo from '../../global/NomeLogoT.png'
 import MiniCart from '../MiniCart';
+import UserModal from '../UserModal';
 
 export default function Header() {
     const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -154,17 +156,20 @@ export default function Header() {
                             {/* Autenticação */}
                             {isAuthenticated ? (
                                 <div className="flex items-center space-x-3">
-                                    <div className="flex items-center space-x-3 bg-gray-50 rounded-xl px-4 py-2">
+                                    <button
+                                        onClick={() => setIsUserModalOpen(true)}
+                                        className="flex items-center space-x-3 bg-gray-50 rounded-xl px-4 py-2 hover:bg-gray-100 transition-colors"
+                                    >
                                         <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
                                             <User className="h-4 w-4 text-white" />
                                         </div>
                                         <div className="text-sm">
-                                            <p className="font-medium text-gray-900">{user?.name}</p>
+                                            <p className="font-medium text-gray-900">{user?.nome}</p>
                                             <p className="text-xs text-gray-500">
                                                 {user?.role === 'admin' ? 'Administrador' : 'Usuário'}
                                             </p>
                                         </div>
-                                    </div>
+                                    </button>
                                     
                                     {user?.role === 'admin' && (
                                         <Link 
@@ -175,14 +180,6 @@ export default function Header() {
                                             <span>Admin</span>
                                         </Link>
                                     )}
-                                    
-                                    <button
-                                        onClick={handleLogout}
-                                        className="inline-flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors"
-                                        title="Sair"
-                                    >
-                                        <LogOut className="h-5 w-5" />
-                                    </button>
                                 </div>
                             ) : (
                                 <Link 
@@ -266,17 +263,20 @@ export default function Header() {
                             {/* Autenticação Mobile */}
                             {isAuthenticated ? (
                                 <div className="space-y-3 pt-4 border-t border-gray-200">
-                                    <div className="flex items-center space-x-3 bg-gray-50 rounded-xl px-4 py-3">
+                                    <button
+                                        onClick={() => setIsUserModalOpen(true)}
+                                        className="w-full flex items-center space-x-3 bg-gray-50 rounded-xl px-4 py-3 hover:bg-gray-100 transition-colors"
+                                    >
                                         <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
                                             <User className="h-5 w-5 text-white" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">{user?.name}</p>
+                                            <p className="font-medium text-gray-900">{user?.nome}</p>
                                             <p className="text-sm text-gray-500">
                                                 {user?.role === 'admin' ? 'Administrador' : 'Usuário'}
                                             </p>
                                         </div>
-                                    </div>
+                                    </button>
                                     
                                     {user?.role === 'admin' && (
                                         <Link 
@@ -291,13 +291,13 @@ export default function Header() {
                                     
                                     <button
                                         onClick={() => {
-                                            handleLogout();
+                                            setIsUserModalOpen(true);
                                             setIsMenuOpen(false);
                                         }}
                                         className="flex items-center space-x-3 text-gray-600 hover:text-red-600 transition-colors w-full py-2"
                                     >
-                                        <LogOut className="h-5 w-5" />
-                                        <span>Sair</span>
+                                        <User className="h-5 w-5" />
+                                        <span>Minha Conta</span>
                                     </button>
                                 </div>
                             ) : (
@@ -316,6 +316,12 @@ export default function Header() {
                     </div>
                 )}
             </header>
+
+            {/* Modal do Usuário */}
+            <UserModal 
+                isOpen={isUserModalOpen} 
+                onClose={() => setIsUserModalOpen(false)} 
+            />
         </>
     );
 }

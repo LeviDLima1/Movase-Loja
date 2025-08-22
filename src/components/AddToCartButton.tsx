@@ -9,17 +9,28 @@ import { ShoppingCart, Check, Loader2 } from 'lucide-react';
 interface AddToCartButtonProps {
   livro: Omit<CartItem, 'quantity'>;
   className?: string;
+  disabled?: boolean;
+  status?: string;
 }
 
-export default function AddToCartButton({ livro, className = '' }: AddToCartButtonProps) {
+export default function AddToCartButton({ livro, className = '', disabled = false, status }: AddToCartButtonProps) {
   const { addToCart, openCart } = useCart();
   const { showToast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
+
+  // Verifica se o livro está disponível
+  const isAvailable = status === 'disponivel' && !disabled;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (isAdding) return; // Previne cliques múltiplos
+    
+    if (!isAvailable) {
+      // Mostra mensagem de erro para livros indisponíveis
+      showToast(`${livro.titulo} não está disponível no momento`, 'error', 3000, 'Item Indisponível');
+      return;
+    }
     
     setIsAdding(true);
     addToCart(livro);
@@ -35,13 +46,17 @@ export default function AddToCartButton({ livro, className = '' }: AddToCartButt
   return (
     <button
       onClick={handleAddToCart}
-      disabled={isAdding}
-      className={`group relative inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${className}`}
+      disabled={isAdding || !isAvailable}
+      className={`group relative inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all duration-300 transform shadow-lg ${
+        isAvailable 
+          ? 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 hover:scale-105 active:scale-95 hover:shadow-xl' 
+          : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+      } disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       {/* Estado normal */}
       <span className={`flex items-center gap-2 transition-all duration-300 ${isAdding ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>
-        <ShoppingCart className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-        Adicionar ao Carrinho
+        <ShoppingCart className={`h-4 w-4 ${isAvailable ? 'group-hover:scale-110 transition-transform duration-200' : ''}`} />
+        {isAvailable ? 'Adicionar ao Carrinho' : 'Indisponível'}
       </span>
       
       {/* Estado de loading */}

@@ -9,15 +9,17 @@ export interface CartItem {
 
 export interface CartContextType {
   items: CartItem[];
-  addToCart: (livro: Omit<CartItem, 'quantity'>) => void;
-  removeFromCart: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (livro: Omit<CartItem, 'quantity'>) => Promise<void>;
+  removeFromCart: (id: number) => Promise<void>;
+  updateQuantity: (id: number, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   total: number;
   itemCount: number;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export interface UserAddress {

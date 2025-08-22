@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Star, ShoppingCart, Eye, Heart, Tag, TrendingUp } from 'lucide-react';
 import { Livro } from '@/hooks/useLivros';
 import AddToCartButton from '../AddToCartButton';
+import OptimizedImage from '../ui/OptimizedImage';
 
 interface LivroCardProps {
   livro: Livro;
@@ -104,21 +104,15 @@ export default function LivroCard({ livro }: LivroCardProps) {
         />
       </button>
 
-      {/* Imagem */}
-      <div className="relative h-64 overflow-hidden">
-        <Image
-          src={isHovered && livro.imagemBack ? livro.imagemBack : livro.imagemFront}
-          alt={livro.titulo}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={(e) => {
-            // Fallback para placeholder se a imagem não carregar
-            const target = e.target as HTMLImageElement;
-            target.src = '/api/placeholder/300/400';
-          }}
-          priority={false}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+             {/* Imagem */}
+       <div className="relative h-64 overflow-hidden">
+         <OptimizedImage
+           src={isHovered && livro.imagemBack ? livro.imagemBack : livro.imagemFront}
+           alt={livro.titulo}
+           fill
+           className="object-cover transition-transform duration-500 group-hover:scale-105"
+           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+         />
         
         {/* Overlay com informações rápidas */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
@@ -198,7 +192,9 @@ export default function LivroCard({ livro }: LivroCardProps) {
               price: livro.preco,
               img1: livro.imagemFront
             }}
-            className={`flex-1 ${livro.status !== 'disponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+            status={livro.status}
+            disabled={livro.status !== 'disponivel'}
+            className="flex-1"
           />
         </div>
 
