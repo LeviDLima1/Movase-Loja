@@ -123,7 +123,7 @@ export default function Toast({
   return (
     <div 
       className={`
-        fixed top-4 right-4 z-50 w-96 max-w-sm
+        fixed top-4 right-4 z-[80] w-96 max-w-sm
         transform transition-all duration-300 ease-out
         ${isVisible 
           ? 'translate-x-0 opacity-100 scale-100' 

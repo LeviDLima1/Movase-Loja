@@ -201,7 +201,8 @@ export default function Header() {
                         <div className="lg:hidden flex items-center space-x-3">
                             <button
                                 onClick={toggleMenu}
-                                className="p-2 text-gray-700 hover:text-red-600 transition-colors"
+                                className="p-2 text-gray-700 hover:text-red-600 transition-colors touch-manipulation"
+                                aria-label="Abrir menu"
                             >
                                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                             </button>

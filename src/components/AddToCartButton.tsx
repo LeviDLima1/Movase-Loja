@@ -47,11 +47,12 @@ export default function AddToCartButton({ livro, className = '', disabled = fals
     <button
       onClick={handleAddToCart}
       disabled={isAdding || !isAvailable}
-      className={`group relative inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all duration-300 transform shadow-lg ${
+      className={`group relative inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all duration-300 transform shadow-lg touch-manipulation ${
         isAvailable 
           ? 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 hover:scale-105 active:scale-95 hover:shadow-xl' 
           : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
       } disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      aria-label={isAvailable ? 'Adicionar ao carrinho' : 'Item indisponível'}
     >
       {/* Estado normal */}
       <span className={`flex items-center gap-2 transition-all duration-300 ${isAdding ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>

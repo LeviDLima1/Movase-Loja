@@ -72,7 +72,7 @@ export default function MiniCart() {
 
       {/* Mini Cart Dropdown */}
       {isVisible && (
-        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 animate-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-[60] animate-in slide-in-from-top-2 duration-200">
           {/* Header */}
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
@@ -94,11 +94,15 @@ export default function MiniCart() {
                 {items.slice(0, 3).map((item) => (
                   <div key={item.id} className="flex items-center gap-3 p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <Image
-                      src={item.img1}
+                      src={item.img1 || '/placeholder-book.jpg'}
                       alt={item.titulo}
                       width={40}
                       height={50}
                       className="rounded-md object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder-book.jpg';
+                      }}
                     />
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-gray-900 truncate">

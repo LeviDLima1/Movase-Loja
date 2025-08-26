@@ -24,9 +24,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Verificar se há uma sessão salva no localStorage
   useEffect(() => {
     const initializeAuth = async () => {
+      // Aguardar a hidratação do Next.js
+      if (typeof window === 'undefined') {
+        console.log('🔍 Aguardando hidratação...');
+        return;
+      }
+      
+      console.log('🔍 Inicializando autenticação...');
       await checkAuth();
     };
-    initializeAuth();
+    
+    // Executar imediatamente se já estamos no browser
+    if (typeof window !== 'undefined') {
+      initializeAuth();
+    } else {
+      // Aguardar hidratação
+      const timer = setTimeout(initializeAuth, 100);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -35,9 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Verificar se estamos no browser
       if (typeof window === 'undefined') {
+        console.log('🔍 SSR detectado, aguardando hidratação...');
         setUser(null);
+        setIsLoading(false);
         return;
       }
+      
+      // Aguardar um pouco para garantir que o localStorage está disponível
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Primeiro, verificar se há dados no localStorage
       const userData = authService.getCurrentUser();
@@ -46,14 +66,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔍 Verificando autenticação:', {
         hasUserData: !!userData,
         hasToken: !!token,
-        userData,
+        userData: userData ? `${userData.nome} (${userData.email})` : 'null',
         token: token ? 'EXISTE' : 'NÃO EXISTE'
       });
       
       if (userData && token) {
         // Se há dados locais, definir usuário temporariamente
         setUser(userData);
-        console.log('✅ Usuário definido temporariamente:', userData);
+        console.log('✅ Usuário definido temporariamente:', userData.nome);
         
         // Tentar verificar com o backend
         try {
@@ -62,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (response.success && response.data) {
             // Backend confirmou autenticação
             setUser(response.data);
-            console.log('✅ Backend confirmou autenticação:', response.data);
+            console.log('✅ Backend confirmou autenticação:', response.data.nome);
           } else {
             // Backend rejeitou, limpar dados
             console.log('❌ Backend rejeitou autenticação, limpando dados');
@@ -83,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (response.success && response.data) {
             setUser(response.data);
-            console.log('✅ Backend retornou usuário:', response.data);
+            console.log('✅ Backend retornou usuário:', response.data.nome);
           } else {
             setUser(null);
             console.log('❌ Nenhuma autenticação válida encontrada');

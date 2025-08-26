@@ -144,25 +144,27 @@ export default function Modal({
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
       
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div 
-          ref={modalRef}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={title ? "modal-title" : undefined}
-          className={`
-            bg-white rounded-2xl shadow-2xl w-full
-            transform transition-all duration-300 ease-out
-            animate-in slide-in-from-bottom-4 zoom-in-95
-            ${getSizeClasses()} ${className}
-          `}
-        >
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                  <div 
+            ref={modalRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? "modal-title" : undefined}
+            aria-describedby="modal-description"
+            className={`
+              bg-white rounded-2xl shadow-2xl w-full
+              transform transition-all duration-300 ease-out
+              animate-in slide-in-from-bottom-4 zoom-in-95
+              focus:outline-none
+              ${getSizeClasses()} ${className}
+            `}
+          >
           {/* Header */}
           {(title || showCloseButton) && (
             <div className={`
@@ -202,7 +204,7 @@ export default function Modal({
           )}
 
           {/* Content */}
-          <div className="p-6">
+          <div id="modal-description" className="p-6">
             {children}
           </div>
         </div>

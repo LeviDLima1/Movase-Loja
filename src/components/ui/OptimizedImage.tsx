@@ -24,7 +24,7 @@ export default function OptimizedImage({
   className = '',
   priority = false,
   sizes,
-  fallbackSrc = '/api/placeholder/300/400'
+  fallbackSrc = '/placeholder-book.jpg'
 }: OptimizedImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
@@ -60,6 +60,7 @@ export default function OptimizedImage({
     priority,
     sizes,
     onError: handleError,
+    loading: priority ? 'eager' : 'lazy',
   };
 
   if (fill) {
@@ -76,6 +77,9 @@ export default function OptimizedImage({
       {...imageProps}
       width={width || 300}
       height={height || 400}
+      quality={85}
+      placeholder="blur"
+      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
     />
   );
 }

@@ -1,0 +1,25 @@
+{
+  "name": "Movase - Livraria Cristã",
+  "short_name": "Movase",
+  "description": "Livraria cristã com os melhores livros e produtos para sua fé",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["books", "shopping", "education"],
+  "lang": "pt-BR",
+  "dir": "ltr"
+}

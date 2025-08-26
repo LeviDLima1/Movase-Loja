@@ -34,14 +34,15 @@ export default function FloatingCart() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
+    <div className="fixed bottom-6 right-6 z-[50]">
       {/* Carrinho Flutuante */}
       <div className="relative">
         <button
           onClick={openCart}
-          className={`group relative bg-red-600 text-white p-4 rounded-full shadow-2xl hover:bg-red-700 transition-all duration-300 transform hover:scale-110 ${
+          className={`group relative bg-red-600 text-white p-4 rounded-full shadow-2xl hover:bg-red-700 transition-all duration-300 transform hover:scale-110 touch-manipulation ${
             isAnimating ? 'animate-bounce' : ''
           }`}
+          aria-label="Abrir carrinho"
         >
           <ShoppingCart className="h-6 w-6" />
           

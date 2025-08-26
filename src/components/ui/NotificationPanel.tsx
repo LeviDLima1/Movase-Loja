@@ -134,7 +134,7 @@ export default function NotificationPanel() {
 
       {/* Painel de Notificações */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[60]">
           <div ref={panelRef}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">

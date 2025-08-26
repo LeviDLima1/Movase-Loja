@@ -103,11 +103,15 @@ export default function CartModal() {
                     {/* Imagem */}
                     <div className="flex-shrink-0">
                       <Image
-                        src={item.img1}
+                        src={item.img1 || '/placeholder-book.jpg'}
                         alt={item.titulo}
                         width={50}
                         height={65}
                         className="rounded-md object-cover sm:w-[60px] sm:h-[80px]"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder-book.jpg';
+                        }}
                       />
                     </div>
 

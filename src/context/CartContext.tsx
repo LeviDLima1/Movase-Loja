@@ -144,6 +144,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Carregar carrinho do backend quando autenticado, ou localStorage quando não
   useEffect(() => {
+    // Verificar se estamos no cliente (não SSR)
+    if (typeof window === 'undefined') {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
     const loadCart = async () => {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
@@ -209,7 +215,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    loadCart();
+    // Pequeno delay para garantir que localStorage está disponível
+    const timer = setTimeout(() => {
+      loadCart();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [isAuthenticated, user]);
 
   // Função debounced para salvar no localStorage (apenas quando não autenticado)
@@ -217,7 +228,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (() => {
       let timeoutId: NodeJS.Timeout;
       return (items: CartItem[]) => {
-        if (!isAuthenticated) {
+        // Verificar se estamos no cliente e não autenticado
+        if (typeof window !== 'undefined' && !isAuthenticated) {
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
             try {
