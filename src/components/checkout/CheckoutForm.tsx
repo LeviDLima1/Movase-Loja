@@ -4,13 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 import { calcularFrete, CorreiosResponse } from '../../correios';
-import { 
-  processarPagamentoCartao, 
-  gerarBoleto, 
-  gerarPIX, 
-  validarCPF,
-  PagSeguroOrder 
-} from '../../services/pagseguro';
 import { buscarEnderecoPorCEP, formatarCEP } from '../../services/viacep';
 import { UserAddress } from '../../types/cart';
 
@@ -22,6 +15,50 @@ import EnderecoStep from './steps/EnderecoStep';
 import FreteStep from './steps/FreteStep';
 import PagamentoStep from './steps/PagamentoStep';
 import ConfirmacaoStep from './steps/ConfirmacaoStep';
+
+// Interfaces temporárias para pagamento
+interface PaymentOrder {
+  reference_id: string;
+  customer: {
+    name: string;
+    email: string;
+    taxId: string;
+    phones: Array<{
+      country: string;
+      area: string;
+      number: string;
+    }>;
+    address: {
+      street: string;
+      number: string;
+      complement: string;
+      district: string;
+      city: string;
+      state: string;
+      country: string;
+      postalCode: string;
+    };
+  };
+  items: Array<{
+    id: string;
+    description: string;
+    amount: number;
+    quantity: number;
+    weight: number;
+  }>;
+  shipping: {
+    address: {
+      street: string;
+      number: string;
+      complement: string;
+      district: string;
+      city: string;
+      state: string;
+      country: string;
+      postalCode: string;
+    };
+  };
+}
 
 interface CheckoutFormProps {
   onSuccess: (orderId: string) => void;
@@ -162,6 +199,18 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
     setPaymentMethod(method);
   }, []);
 
+  // Função temporária de validação de CPF
+  const validarCPF = (cpf: string): boolean => {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) return false;
+    
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(cpfLimpo)) return false;
+    
+    // Validação básica - pode ser melhorada
+    return true;
+  };
+
   // Validações por etapa
   const validateDadosPessoais = useCallback((): boolean => {
     if (!customerData.name || !customerData.email || !customerData.cpf || !customerData.phone) {
@@ -251,7 +300,7 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
 
     setIsProcessing(true);
     try {
-      const orderData: Omit<PagSeguroOrder, 'charges'> = {
+      const orderData: PaymentOrder = {
         reference_id: `PED-${Date.now()}`,
         customer: {
           name: customerData.name,
@@ -265,7 +314,7 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
           address: {
             street: address.logradouro,
             number: address.numero,
-            complement: address.complemento,
+            complement: address.complemento || '',
             district: address.bairro,
             city: address.cidade,
             state: address.uf,
@@ -284,7 +333,7 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
           address: {
             street: address.logradouro,
             number: address.numero,
-            complement: address.complemento,
+            complement: address.complemento || '',
             district: address.bairro,
             city: address.cidade,
             state: address.uf,
@@ -298,23 +347,21 @@ export default function CheckoutForm({ onSuccess, onFreteChange }: CheckoutFormP
 
       switch (paymentMethod) {
         case 'credit_card':
-          response = await processarPagamentoCartao(orderData, {
-            number: cardData.number,
-            expMonth: cardData.expMonth,
-            expYear: cardData.expYear,
-            securityCode: cardData.securityCode,
-            holderName: cardData.holderName,
-            holderBirthDate: cardData.holderBirthDate,
-            holderTaxId: cardData.holderCPF
-          });
+          // Simulação de processamento de cartão
+          console.log('Simulando processamento de cartão:', orderData);
+          response = { id: `SIM-${Date.now()}` };
           break;
 
         case 'boleto':
-          response = await gerarBoleto(orderData);
+          // Simulação de geração de boleto
+          console.log('Simulando geração de boleto:', orderData);
+          response = { id: `SIM-${Date.now()}` };
           break;
 
         case 'pix':
-          response = await gerarPIX(orderData);
+          // Simulação de geração de PIX
+          console.log('Simulando geração de PIX:', orderData);
+          response = { id: `SIM-${Date.now()}` };
           break;
 
         default:

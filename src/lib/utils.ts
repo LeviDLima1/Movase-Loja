@@ -245,15 +245,15 @@ export function mergeObjects<T extends Record<string, any>>(
   target: T,
   ...sources: Partial<T>[]
 ): T {
-  const result = { ...target };
+  const result = { ...target } as T;
   
   for (const source of sources) {
     for (const key in source) {
       if (source.hasOwnProperty(key)) {
         if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-          result[key] = mergeObjects(result[key] || {}, source[key]);
+          result[key] = mergeObjects(result[key] || {} as any, source[key] as any);
         } else {
-          result[key] = source[key];
+          result[key] = source[key] as T[Extract<keyof T, string>];
         }
       }
     }

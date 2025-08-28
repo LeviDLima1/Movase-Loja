@@ -55,12 +55,11 @@ export const AUTH_CONFIG = {
 
 // Configurações de pagamento
 export const PAYMENT_CONFIG = {
-  // PagSeguro
-  pagseguro: {
-    email: process.env.PAGSEGURO_EMAIL || '',
-    token: process.env.PAGSEGURO_TOKEN || '',
+  // Configuração temporária - aguardando implementação do provedor
+  provider: {
+    name: 'pending', // 'pagseguro' | 'pagbank' | 'mercadopago' | 'stripe'
     sandbox: process.env.NODE_ENV === 'development',
-    notificationUrl: `${APP_CONFIG.baseUrl}/api/pagseguro/notifications`
+    notificationUrl: `${APP_CONFIG.baseUrl}/api/payment/webhook`
   },
   
   // Métodos de pagamento
@@ -315,8 +314,6 @@ export function getConfig() {
 export function validateConfig() {
   const requiredEnvVars = [
     'JWT_SECRET',
-    'PAGSEGURO_EMAIL',
-    'PAGSEGURO_TOKEN',
     'SMTP_USER',
     'SMTP_PASS'
   ];

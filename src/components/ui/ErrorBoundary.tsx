@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { FaExclamationTriangle, FaRefresh, FaHome } from 'react-icons/fa';
+import { FaExclamationTriangle, FaRedo, FaHome } from 'react-icons/fa';
 
 interface Props {
   children: ReactNode;
@@ -90,7 +90,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 onClick={this.handleRetry}
                 className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors cursor-pointer flex items-center justify-center"
               >
-                <FaRefresh className="w-4 h-4 mr-2" />
+                <FaRedo className="w-4 h-4 mr-2" />
                 Tentar Novamente
               </button>
               

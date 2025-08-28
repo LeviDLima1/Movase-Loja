@@ -39,7 +39,6 @@ class ApiService {
           'Content-Type': 'application/json',
           ...options.headers,
         },
-        timeout: this.timeout,
       };
 
       // Adicionar token de autenticação se existir

@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fa';
 import { useAdmin } from '@/contexts/AdminContext';
 import LoadingSpinner, { Skeleton } from '@/components/ui/LoadingSpinner';
+import { Livro } from '@/hooks/useLivros';
 
 interface LivroForm {
   titulo: string;
@@ -133,7 +134,7 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
         setIsLoading(true);
         
         // Buscar livro nos dados do contexto ou mock
-        const livros = products.length > 0 ? products : mockLivros;
+        const livros = products.length > 0 ? (products as unknown as Livro[]) : mockLivros;
         const livro = livros.find(l => l.id === resolvedParams.id);
         
         if (!livro) {
@@ -150,14 +151,14 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
           estoque: livro.estoque.toString(),
           categoria: livro.categoria,
           isbn: livro.isbn || '',
-          paginas: livro.paginas || '',
+          paginas: typeof livro.paginas === 'number' ? livro.paginas.toString() : livro.paginas || '',
           editora: livro.editora || '',
-          anoPublicacao: livro.anoPublicacao || '',
-          idioma: livro.idioma || 'Português',
-          formato: livro.formato || 'Físico',
-          peso: livro.peso || '',
-          dimensoes: livro.dimensoes || '',
-          status: livro.status
+          anoPublicacao: (livro as any).ano ? (livro as any).ano.toString() : '',
+          idioma: 'Português', // Valor padrão
+          formato: 'Físico', // Valor padrão
+          peso: '', // Valor padrão
+          dimensoes: '', // Valor padrão
+          status: livro.status === 'disponivel' ? 'ativo' : 'inativo'
         });
 
       } catch (error) {

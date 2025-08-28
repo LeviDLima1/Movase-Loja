@@ -60,7 +60,6 @@ export default function OptimizedImage({
     priority,
     sizes,
     onError: handleError,
-    loading: priority ? 'eager' : 'lazy',
   };
 
   if (fill) {

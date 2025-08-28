@@ -75,9 +75,7 @@ export const addressSchema = z.object({
 
 // Schema para dados de pagamento
 export const paymentSchema = z.object({
-  method: z.enum(['pix', 'boleto', 'cartao'], {
-    errorMap: () => ({ message: 'Método de pagamento inválido' })
-  }),
+  method: z.enum(['pix', 'boleto', 'cartao']),
   
   cardData: z.object({
     number: z.string()
@@ -265,7 +263,7 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): { succes
     return { success: true, data: validatedData };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => err.message);
+      const errors = error.issues.map(err => err.message);
       return { success: false, errors };
     }
     return { success: false, errors: ['Erro de validação desconhecido'] };

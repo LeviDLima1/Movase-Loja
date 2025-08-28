@@ -410,10 +410,10 @@ export function exportRelatorioAvancado(data: any, options: ExportOptions) {
       exportToCSV(data.produtosMaisVendidos, { ...options, filename: 'produtos-mais-vendidos' });
       break;
     case 'json':
-      exportToJSON(relatorioData, { ...options, filename: 'relatorio-completo' });
+      exportToJSON([relatorioData], { ...options, filename: 'relatorio-completo' });
       break;
     case 'pdf':
-      exportToPDF(relatorioData, { ...options, filename: 'relatorio-completo' });
+      exportToPDF([relatorioData], { ...options, filename: 'relatorio-completo' });
       break;
   }
 }
