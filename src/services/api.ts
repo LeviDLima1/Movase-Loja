@@ -1,10 +1,11 @@
 // ===== SERVIÇO DE API - Conexão com Backend =====
 
-import { APP_CONFIG } from '@/config';
+import { getEnvironmentConfig } from '@/config/environment';
 
-// Configuração da API
-const API_BASE = 'http://localhost:3001/api';
-const API_TIMEOUT = 10000; // 10 segundos
+// Configuração da API - Centralizada para migração fácil
+const config = getEnvironmentConfig();
+const API_BASE = config.api.backendUrl;
+const API_TIMEOUT = config.api.timeout;
 
 // Tipos de resposta da API
 export interface ApiResponse<T = any> {

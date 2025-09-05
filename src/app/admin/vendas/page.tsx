@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { FaArrowLeft, FaSearch, FaFilter, FaEye, FaCheck, FaTruck, FaFileInvoice, FaChartBar, FaDownload } from 'react-icons/fa';
+import { FaArrowLeft, FaSearch, FaFilter, FaEye, FaCheck, FaTruck, FaFileInvoice, FaChartBar, FaDownload, FaTimes } from 'react-icons/fa';
 import { useAdmin } from '@/contexts/AdminContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import LoadingSpinner, { Skeleton, TableSkeleton } from '@/components/ui/LoadingSpinner';
 import { formatCurrency, formatDate, formatCPF, formatPhone, cn } from '@/lib/utils';
 import NotificationPanel from '@/components/ui/NotificationPanel';
@@ -12,96 +13,28 @@ import ExportButton from '@/components/ui/ExportButton';
 // Importar tipos do AdminContext
 import { Order } from '@/contexts/AdminContext';
 
-// Mock data for demonstration
-const mockPedidos: Order[] = [
-  {
-    id: '1',
-    numero: '#001',
-    cliente: {
-      nome: 'João Silva',
-      email: 'joao.silva@email.com',
-      telefone: '11987654321',
-      endereco: 'Rua das Flores, 123, Apto 45, Centro, São Paulo - SP, CEP: 01234-567'
-    },
-    produtos: [
-      { id: '1', titulo: 'Aventuras Fantásticas', quantidade: 1, preco: 89.90 }
-    ],
-    total: 89.90,
-    status: 'pendente',
-    dataPedido: '2024-01-15T10:30:00',
-    formaPagamento: 'Pix',
-    frete: 15.00
-  },
-  {
-    id: '2',
-    numero: '#002',
-    cliente: {
-      nome: 'Maria Santos',
-      email: 'maria.santos@email.com',
-      telefone: '11987654322',
-      endereco: 'Avenida Paulista, 1000, Bela Vista, São Paulo - SP, CEP: 04567-890'
-    },
-    produtos: [
-      { id: '2', titulo: 'Mistério do Século', quantidade: 1, preco: 129.90 },
-      { id: '3', titulo: 'História da Arte', quantidade: 1, preco: 69.90 }
-    ],
-    total: 199.80,
-    status: 'enviado',
-    dataPedido: '2024-01-14T14:20:00',
-    dataPagamento: '2024-01-14T14:25:00',
-    formaPagamento: 'Cartão de Crédito',
-    frete: 18.00
-  },
-  {
-    id: '3',
-    numero: '#003',
-    cliente: {
-      nome: 'Pedro Costa',
-      email: 'pedro.costa@email.com',
-      telefone: '11987654323',
-      endereco: 'Rua Augusta, 500, Consolação, São Paulo - SP, CEP: 07890-123'
-    },
-    produtos: [
-      { id: '4', titulo: 'Ciência Moderna', quantidade: 1, preco: 159.90 }
-    ],
-    total: 159.90,
-    status: 'entregue',
-    dataPedido: '2024-01-13T09:15:00',
-    dataPagamento: '2024-01-13T09:20:00',
-    formaPagamento: 'Boleto',
-    frete: 20.00
-  },
-  {
-    id: '4',
-    numero: '#004',
-    cliente: {
-      nome: 'Ana Oliveira',
-      email: 'ana.oliveira@email.com',
-      telefone: '11987654324',
-      endereco: 'Rua das Palmeiras, 789, Jardins, São Paulo - SP, CEP: 01234-567'
-    },
-    produtos: [
-      { id: '5', titulo: 'Filosofia Contemporânea', quantidade: 1, preco: 99.90 }
-    ],
-    total: 99.90,
-    status: 'confirmado',
-    dataPedido: '2024-01-12T16:45:00',
-    dataPagamento: '2024-01-12T17:00:00',
-    formaPagamento: 'Pix',
-    frete: 16.00
-  }
-];
-
 export default function AdminVendas() {
   const { state, actions } = useAdmin();
   const { orders, loading: isLoading, error } = state;
-  const { updateOrderStatus } = actions;
+  const { fetchOrders, updateOrderStatus } = actions;
+  const { addSuccessNotification, addErrorNotification } = useNotifications();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [dateFilter, setDateFilter] = useState('todos');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
 
-  // Use mock data for now, will be replaced with real data from context
-  const pedidos = orders.length > 0 ? orders : mockPedidos;
+  // Debug: Log quando o componente renderiza
+  console.log('🔄 AdminVendas renderizando:', {
+    ordersCount: orders.length,
+    loading: isLoading,
+    error
+  });
+
+  // REMOVIDO: useEffect que causava loop infinito
+  // useEffect(() => {
+  //   fetchOrders();
+  // }, [fetchOrders]);
 
   const statusConfig = {
     pendente: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
@@ -111,7 +44,7 @@ export default function AdminVendas() {
     cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-800' }
   };
 
-  const filteredPedidos = pedidos.filter(pedido => {
+  const filteredPedidos = orders.filter(pedido => {
     const matchesSearch = 
       pedido.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pedido.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,10 +90,10 @@ export default function AdminVendas() {
   };
 
   const getTotalStats = () => {
-    const total = pedidos.length;
-    const pendentes = pedidos.filter(p => p.status === 'pendente').length;
-    const enviados = pedidos.filter(p => p.status === 'enviado').length;
-    const receita = pedidos
+    const total = orders.length;
+    const pendentes = orders.filter(p => p.status === 'pendente').length;
+    const enviados = orders.filter(p => p.status === 'enviado').length;
+    const receita = orders
       .filter(p => p.status !== 'cancelado')
       .reduce((sum, p) => sum + p.total, 0);
     
@@ -169,11 +102,19 @@ export default function AdminVendas() {
 
   const handleStatusUpdate = async (pedidoId: string, newStatus: Order['status']) => {
     try {
+      setIsUpdatingStatus(pedidoId);
       await updateOrderStatus(pedidoId, newStatus);
-      // The context will handle the state update
+      addSuccessNotification('Sucesso', `Status do pedido atualizado para ${statusConfig[newStatus].label}`);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
+      addErrorNotification('Erro', 'Erro ao atualizar status do pedido. Tente novamente.');
+    } finally {
+      setIsUpdatingStatus(null);
     }
+  };
+
+  const handleRetry = () => {
+    fetchOrders();
   };
 
   if (isLoading) {
@@ -200,7 +141,7 @@ export default function AdminVendas() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro ao carregar vendas</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={handleRetry}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
           >
             Tentar novamente
@@ -241,13 +182,6 @@ export default function AdminVendas() {
                 type="vendas"
               />
               
-              <Link 
-                href="/admin/vendas/relatorios"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
-              >
-                <FaChartBar className="h-4 w-4 mr-2" />
-                Relatórios
-              </Link>
               <Link 
                 href="/admin/vendas/notas-fiscais"
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
@@ -356,9 +290,16 @@ export default function AdminVendas() {
                 <option value="semana">Última Semana</option>
               </select>
               
-              <button className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
-                <FaFilter className="h-4 w-4 inline mr-2" />
-                Filtros
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('todos');
+                  setDateFilter('todos');
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+              >
+                <FaTimes className="h-4 w-4 inline mr-2" />
+                Limpar
               </button>
             </div>
           </div>
@@ -438,7 +379,8 @@ export default function AdminVendas() {
                         {pedido.status === 'pendente' && (
                           <button
                             onClick={() => handleStatusUpdate(pedido.id, 'confirmado')}
-                            className="text-green-600 hover:text-green-900 cursor-pointer"
+                            disabled={isUpdatingStatus === pedido.id}
+                            className="text-green-600 hover:text-green-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Confirmar pedido"
                           >
                             <FaCheck className="h-4 w-4" />
@@ -448,10 +390,22 @@ export default function AdminVendas() {
                         {pedido.status === 'confirmado' && (
                           <button
                             onClick={() => handleStatusUpdate(pedido.id, 'enviado')}
-                            className="text-purple-600 hover:text-purple-900 cursor-pointer"
+                            disabled={isUpdatingStatus === pedido.id}
+                            className="text-purple-600 hover:text-purple-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Marcar como enviado"
                           >
                             <FaTruck className="h-4 w-4" />
+                          </button>
+                        )}
+
+                        {pedido.status === 'enviado' && (
+                          <button
+                            onClick={() => handleStatusUpdate(pedido.id, 'entregue')}
+                            disabled={isUpdatingStatus === pedido.id}
+                            className="text-green-600 hover:text-green-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Marcar como entregue"
+                          >
+                            <FaCheck className="h-4 w-4" />
                           </button>
                         )}
                         

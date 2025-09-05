@@ -1,13 +1,15 @@
+import { getEnvironmentConfig } from './environment';
+
 // Configurações gerais da aplicação
 export const APP_CONFIG = {
-  name: 'Loja de Livros',
-  description: 'Sua livraria online de confiança',
+  name: 'Movase - Livraria Cristã',
+  description: 'Sua livraria cristã online de confiança',
   version: '1.0.0',
-  environment: process.env.NODE_ENV || 'development',
+  environment: getEnvironmentConfig().NODE_ENV,
   
-  // URLs
-  baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+  // URLs - Centralizadas para migração fácil
+  baseUrl: getEnvironmentConfig().SITE_URL,
+  apiUrl: getEnvironmentConfig().API_URL,
   
   // Configurações de paginação
   pagination: {

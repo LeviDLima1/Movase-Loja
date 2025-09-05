@@ -10,70 +10,13 @@ import NotificationPanel from '@/components/ui/NotificationPanel';
 import ExportButton from '@/components/ui/ExportButton';
 import { useNotifications } from '@/contexts/NotificationContext';
 
-// Mock data for demonstration
-const mockLivros = [
-  {
-    id: '1',
-    titulo: 'Aventuras Fantásticas',
-    autor: 'João Silva',
-    preco: 89.90,
-    estoque: 15,
-    categoria: 'Ficção',
-    status: 'ativo',
-    dataCriacao: '2024-01-10',
-    vendas: 23
-  },
-  {
-    id: '2',
-    titulo: 'Mistério do Século',
-    autor: 'Maria Santos',
-    preco: 129.90,
-    estoque: 8,
-    categoria: 'Mistério',
-    status: 'ativo',
-    dataCriacao: '2024-01-08',
-    vendas: 15
-  },
-  {
-    id: '3',
-    titulo: 'História da Arte',
-    autor: 'Pedro Costa',
-    preco: 69.90,
-    estoque: 22,
-    categoria: 'Arte',
-    status: 'ativo',
-    dataCriacao: '2024-01-05',
-    vendas: 8
-  },
-  {
-    id: '4',
-    titulo: 'Ciência Moderna',
-    autor: 'Ana Oliveira',
-    preco: 159.90,
-    estoque: 5,
-    categoria: 'Ciência',
-    status: 'inativo',
-    dataCriacao: '2024-01-03',
-    vendas: 12
-  },
-  {
-    id: '5',
-    titulo: 'Filosofia Contemporânea',
-    autor: 'Carlos Lima',
-    preco: 99.90,
-    estoque: 12,
-    categoria: 'Filosofia',
-    status: 'ativo',
-    dataCriacao: '2024-01-01',
-    vendas: 19
-  }
-];
-
 export default function AdminLivros() {
   const { state, actions } = useAdmin();
   const { products, loading: isLoading, error } = state;
-  const { deleteProduct } = actions;
+  const { fetchProducts, deleteProduct } = actions;
   const { addSuccessNotification, addErrorNotification, addEstoqueNotification } = useNotifications();
+  
+  // Estados locais
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [categoriaFilter, setCategoriaFilter] = useState('todos');
@@ -83,10 +26,16 @@ export default function AdminLivros() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Use mock data for now, will be replaced with real data from context
-  const livros = products.length > 0 ? products : mockLivros;
+  // Debug: Log quando o componente renderiza
+  console.log('🔄 AdminLivros renderizando:', { 
+    productsCount: products.length, 
+    loading: isLoading, 
+    error, 
+    initialized: state.initialized 
+  });
 
-  const filteredLivros = livros.filter(livro => {
+  // Filtrar livros baseado nos filtros aplicados
+  const filteredLivros = products.filter(livro => {
     const matchesSearch = livro.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          livro.autor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || livro.status === statusFilter;
@@ -117,6 +66,7 @@ export default function AdminLivros() {
     }
   });
 
+  // Função para excluir livro
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este livro?')) {
       try {
@@ -131,15 +81,16 @@ export default function AdminLivros() {
 
   // Verificar estoque baixo e enviar notificações
   useEffect(() => {
-    const livrosComEstoqueBaixo = livros.filter(livro => livro.estoque <= 5 && livro.estoque > 0);
+    const livrosComEstoqueBaixo = products.filter(livro => livro.estoque <= 5 && livro.estoque > 0);
     livrosComEstoqueBaixo.forEach(livro => {
       addEstoqueNotification(
         `"${livro.titulo}" está com estoque baixo (${livro.estoque} unidades)`,
         `/admin/livros/${livro.id}`
       );
     });
-  }, [livros, addEstoqueNotification]);
+  }, [products, addEstoqueNotification]);
 
+  // Função para obter badge de status
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       ativo: 'bg-green-100 text-green-800',
@@ -152,6 +103,7 @@ export default function AdminLivros() {
     );
   };
 
+  // Função para obter badge de estoque
   const getEstoqueBadge = (estoque: number) => {
     if (estoque === 0) {
       return 'bg-red-100 text-red-800';
@@ -162,6 +114,10 @@ export default function AdminLivros() {
     }
   };
 
+  // Obter categorias únicas dos produtos
+  const categorias = [...new Set(products.map(livro => livro.categoria))].sort();
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
@@ -178,6 +134,7 @@ export default function AdminLivros() {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -186,7 +143,7 @@ export default function AdminLivros() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro ao carregar livros</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => fetchProducts()} 
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
           >
             Tentar novamente
@@ -250,7 +207,7 @@ export default function AdminLivros() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total de Livros</p>
-                <p className="text-2xl font-bold text-gray-900">{livros.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{products.length}</p>
               </div>
             </div>
           </div>
@@ -263,7 +220,7 @@ export default function AdminLivros() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Livros Ativos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {livros.filter(l => l.status === 'ativo').length}
+                  {products.filter(l => l.status === 'ativo').length}
                 </p>
               </div>
             </div>
@@ -277,7 +234,7 @@ export default function AdminLivros() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Livros Inativos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {livros.filter(l => l.status === 'inativo').length}
+                  {products.filter(l => l.status === 'inativo').length}
                 </p>
               </div>
             </div>
@@ -291,7 +248,7 @@ export default function AdminLivros() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Estoque Baixo</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {livros.filter(l => l.estoque <= 5).length}
+                  {products.filter(l => l.estoque <= 5).length}
                 </p>
               </div>
             </div>
@@ -335,11 +292,9 @@ export default function AdminLivros() {
                   className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                 >
                   <option value="todos">Todas as Categorias</option>
-                  <option value="Ficção">Ficção</option>
-                  <option value="Mistério">Mistério</option>
-                  <option value="Arte">Arte</option>
-                  <option value="Ciência">Ciência</option>
-                  <option value="Filosofia">Filosofia</option>
+                  {categorias.map(categoria => (
+                    <option key={categoria} value={categoria}>{categoria}</option>
+                  ))}
                 </select>
                 
                 <button 

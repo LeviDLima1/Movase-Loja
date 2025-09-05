@@ -7,7 +7,6 @@ import {
   BookOpen, 
   ShoppingCart, 
   Users, 
-  BarChart3, 
   Settings, 
   FileText,
   Menu,
@@ -25,7 +24,6 @@ const navigation = [
   { name: 'Livros', href: '/admin/livros', icon: BookOpen },
   { name: 'Vendas', href: '/admin/vendas', icon: ShoppingCart },
   { name: 'Clientes', href: '/admin/clientes', icon: Users },
-  { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3 },
   { name: 'Postagens', href: '/admin/postagens', icon: FileText },
   { name: 'Configurações', href: '/admin/configuracoes', icon: Settings },
 ];

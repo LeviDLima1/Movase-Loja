@@ -18,96 +18,28 @@ import {
   FaShoppingCart,
   FaStar,
   FaChevronDown,
-  FaChevronUp
+  FaChevronUp,
+  FaTimes
 } from 'react-icons/fa';
+import { useAdmin } from '@/contexts/AdminContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import LoadingSpinner, { Skeleton, TableSkeleton } from '@/components/ui/LoadingSpinner';
 import NotificationPanel from '@/components/ui/NotificationPanel';
 import ExportButton from '@/components/ui/ExportButton';
 import { formatDate, formatCPF, formatPhone, formatCurrency, cn } from '@/lib/utils';
 
-// Mock data para clientes
-const mockClientes = [
-  {
-    id: '1',
-    nome: 'João Silva',
-    email: 'joao.silva@email.com',
-    cpf: '123.456.789-00',
-    telefone: '(11) 98765-4321',
-    endereco: 'Rua das Flores, 123, Apto 45, Centro, São Paulo - SP',
-    dataCadastro: '2024-01-15T10:30:00',
-    totalCompras: 5,
-    valorTotal: 1245.80,
-    ultimaCompra: '2024-01-15T10:30:00',
-    status: 'ativo',
-    observacoes: 'Cliente fiel, sempre compra livros de ficção'
-  },
-  {
-    id: '2',
-    nome: 'Maria Santos',
-    email: 'maria.santos@email.com',
-    cpf: '987.654.321-00',
-    telefone: '(11) 98765-4322',
-    endereco: 'Avenida Paulista, 1000, Bela Vista, São Paulo - SP',
-    dataCadastro: '2024-01-10T14:20:00',
-    totalCompras: 3,
-    valorTotal: 899.70,
-    ultimaCompra: '2024-01-14T14:20:00',
-    status: 'ativo',
-    observacoes: 'Interessada em livros técnicos'
-  },
-  {
-    id: '3',
-    nome: 'Pedro Costa',
-    email: 'pedro.costa@email.com',
-    cpf: '456.789.123-00',
-    telefone: '(11) 98765-4323',
-    endereco: 'Rua Augusta, 500, Consolação, São Paulo - SP',
-    dataCadastro: '2024-01-05T09:15:00',
-    totalCompras: 8,
-    valorTotal: 2156.40,
-    ultimaCompra: '2024-01-13T09:15:00',
-    status: 'ativo',
-    observacoes: 'Cliente VIP, compra frequente'
-  },
-  {
-    id: '4',
-    nome: 'Ana Oliveira',
-    email: 'ana.oliveira@email.com',
-    cpf: '789.123.456-00',
-    telefone: '(11) 98765-4324',
-    endereco: 'Rua Oscar Freire, 200, Jardins, São Paulo - SP',
-    dataCadastro: '2024-01-12T16:45:00',
-    totalCompras: 2,
-    valorTotal: 359.80,
-    ultimaCompra: '2024-01-12T16:45:00',
-    status: 'inativo',
-    observacoes: 'Comprou apenas uma vez'
-  },
-  {
-    id: '5',
-    nome: 'Carlos Ferreira',
-    email: 'carlos.ferreira@email.com',
-    cpf: '321.654.987-00',
-    telefone: '(11) 98765-4325',
-    endereco: 'Alameda Santos, 800, Jardins, São Paulo - SP',
-    dataCadastro: '2024-01-08T11:30:00',
-    totalCompras: 12,
-    valorTotal: 3456.90,
-    ultimaCompra: '2024-01-16T11:30:00',
-    status: 'ativo',
-    observacoes: 'Cliente premium, sempre pede entrega express'
-  }
-];
-
 export default function AdminClientes() {
+  const { state, actions } = useAdmin();
+  const { clients, loading: isLoading, error } = state;
+  const { fetchClients, deleteClient } = actions;
   const { addSuccessNotification, addErrorNotification } = useNotifications();
-  const [clientes, setClientes] = useState(mockClientes);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [sortBy, setSortBy] = useState('nome');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filtros avançados
   const [dataInicioFilter, setDataInicioFilter] = useState('');
@@ -115,24 +47,29 @@ export default function AdminClientes() {
   const [valorMinFilter, setValorMinFilter] = useState('');
   const [valorMaxFilter, setValorMaxFilter] = useState('');
 
+  // Carregar dados dos clientes ao montar o componente
+  useEffect(() => {
+    fetchClients();
+  }, []); // Remover fetchClients da dependência para evitar loop infinito
+
   // Filtrar e ordenar clientes
-  const filteredClientes = clientes
+  const filteredClientes = clients
     .filter(cliente => {
       const matchesSearch = 
         cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.cpf.includes(searchTerm) ||
-        cliente.telefone.includes(searchTerm);
+        (cliente.cpf && cliente.cpf.includes(searchTerm)) ||
+        (cliente.telefone && cliente.telefone.includes(searchTerm));
 
       const matchesStatus = statusFilter === 'todos' || cliente.status === statusFilter;
 
-      const matchesDateRange = !dataInicioFilter || !dataFimFilter || 
-        (new Date(cliente.dataCadastro) >= new Date(dataInicioFilter) &&
-         new Date(cliente.dataCadastro) <= new Date(dataFimFilter));
+      const matchesDateRange = 
+        (!dataInicioFilter || new Date(cliente.dataCadastro) >= new Date(dataInicioFilter)) &&
+        (!dataFimFilter || new Date(cliente.dataCadastro) <= new Date(dataFimFilter));
 
-      const matchesValueRange = !valorMinFilter || !valorMaxFilter ||
-        (cliente.valorTotal >= parseFloat(valorMinFilter) &&
-         cliente.valorTotal <= parseFloat(valorMaxFilter));
+      const matchesValueRange = 
+        (!valorMinFilter || valorMinFilter === '' || cliente.valorTotalCompras >= parseFloat(valorMinFilter)) &&
+        (!valorMaxFilter || valorMaxFilter === '' || cliente.valorTotalCompras <= parseFloat(valorMaxFilter));
 
       return matchesSearch && matchesStatus && matchesDateRange && matchesValueRange;
     })
@@ -153,16 +90,16 @@ export default function AdminClientes() {
           bValue = new Date(b.dataCadastro);
           break;
         case 'totalCompras':
-          aValue = a.totalCompras;
-          bValue = b.totalCompras;
+          aValue = a.totalCompras || 0;
+          bValue = b.totalCompras || 0;
           break;
         case 'valorTotal':
-          aValue = a.valorTotal;
-          bValue = b.valorTotal;
+          aValue = a.valorTotalCompras || 0;
+          bValue = b.valorTotalCompras || 0;
           break;
         case 'ultimaCompra':
-          aValue = new Date(a.ultimaCompra);
-          bValue = new Date(b.ultimaCompra);
+          aValue = a.ultimaCompra ? new Date(a.ultimaCompra) : new Date(0);
+          bValue = b.ultimaCompra ? new Date(b.ultimaCompra) : new Date(0);
           break;
         default:
           aValue = a.nome.toLowerCase();
@@ -177,19 +114,19 @@ export default function AdminClientes() {
     });
 
   const handleDeleteCliente = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
+    if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
+      return;
+    }
 
-    setLoading(true);
     try {
-      // Simular exclusão
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setClientes(clientes.filter(cliente => cliente.id !== id));
-      addSuccessNotification('Cliente Excluído', 'Cliente excluído com sucesso');
+      setIsDeleting(id);
+      await deleteClient(id);
+      addSuccessNotification('Sucesso', 'Cliente excluído com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir cliente:', error);
-      addErrorNotification('Erro ao Excluir', 'Erro ao excluir o cliente. Tente novamente.');
+      addErrorNotification('Erro', 'Erro ao excluir o cliente. Tente novamente.');
     } finally {
-      setLoading(false);
+      setIsDeleting(null);
     }
   };
 
@@ -226,6 +163,44 @@ export default function AdminClientes() {
     setValorMinFilter('');
     setValorMaxFilter('');
   };
+
+  const handleRetry = () => {
+    fetchClients();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <Skeleton lines={1} className="h-16" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} lines={3} className="h-32" />
+            ))}
+          </div>
+          <TableSkeleton rows={5} columns={8} />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro ao carregar clientes</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={handleRetry}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -271,6 +246,63 @@ export default function AdminClientes() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <FaUser className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total de Clientes</p>
+                <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-full">
+                <FaUser className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Clientes Ativos</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {clients.filter(c => c.status === 'ativo').length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-purple-100 rounded-full">
+                <FaShoppingCart className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total de Compras</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {clients.reduce((sum, c) => sum + (c.totalCompras || 0), 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <FaStar className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Receita Total</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(clients.reduce((sum, c) => sum + (c.valorTotalCompras || 0), 0))}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Filtros */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -311,8 +343,9 @@ export default function AdminClientes() {
 
               <button
                 onClick={clearFilters}
-                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
+                <FaTimes className="h-4 w-4 mr-2" />
                 Limpar
               </button>
             </div>
@@ -465,24 +498,28 @@ export default function AdminClientes() {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{cliente.nome}</div>
-                          <div className="text-sm text-gray-500">{formatCPF(cliente.cpf)}</div>
+                          <div className="text-sm text-gray-500">
+                            {cliente.cpf ? formatCPF(cliente.cpf) : 'CPF não informado'}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{cliente.email}</div>
-                      <div className="text-sm text-gray-500">{formatPhone(cliente.telefone)}</div>
+                      <div className="text-sm text-gray-500">
+                        {cliente.telefone ? formatPhone(cliente.telefone) : 'Telefone não informado'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(cliente.dataCadastro)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{cliente.totalCompras}</div>
+                      <div className="text-sm text-gray-900">{cliente.totalCompras || 0}</div>
                       <div className="text-sm text-gray-500">pedidos</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(cliente.valorTotal)}
-                    </td>
+                                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatCurrency(cliente.valorTotalCompras || 0)}
+                      </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {cliente.ultimaCompra ? formatDate(cliente.ultimaCompra) : 'Nunca comprou'}
                     </td>
@@ -512,8 +549,8 @@ export default function AdminClientes() {
                         </Link>
                         <button
                           onClick={() => handleDeleteCliente(cliente.id)}
-                          disabled={loading}
-                          className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50"
+                          disabled={isDeleting === cliente.id}
+                          className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Excluir"
                         >
                           <FaTrash className="h-4 w-4" />
@@ -526,40 +563,17 @@ export default function AdminClientes() {
             </table>
           </div>
 
-          {/* Paginação */}
-          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                  Anterior
-                </button>
-                <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                  Próximo
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Mostrando <span className="font-medium">1</span> a <span className="font-medium">{filteredClientes.length}</span> de{' '}
-                    <span className="font-medium">{filteredClientes.length}</span> resultados
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                      Anterior
-                    </button>
-                    <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                      1
-                    </button>
-                    <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                      Próximo
-                    </button>
-                  </nav>
-                </div>
-              </div>
+          {filteredClientes.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">👥</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum cliente encontrado</h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || statusFilter !== 'todos' || dataInicioFilter || dataFimFilter || valorMinFilter || valorMaxFilter
+                  ? 'Tente ajustar os filtros de busca.' 
+                  : 'Ainda não há clientes cadastrados.'}
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -100,16 +100,16 @@ export default function VisualizarLivro({ params }: { params: Promise<{ id: stri
       try {
         setIsLoading(true);
         
-        // Buscar livro nos dados do contexto ou mock
-        const livros = products.length > 0 ? products : mockLivros;
-        const livroEncontrado = livros.find(l => l.id === resolvedParams.id);
+        // Buscar livro via API
+        const response = await fetch(`/api/admin/livros/${resolvedParams.id}`);
+        const data = await response.json();
         
-        if (!livroEncontrado) {
-          setError('Livro não encontrado');
+        if (!response.ok || !data.success) {
+          setError(data.error || 'Livro não encontrado');
           return;
         }
 
-        setLivro(livroEncontrado);
+        setLivro(data.data);
       } catch (error) {
         console.error('Erro ao carregar livro:', error);
         setError('Erro ao carregar dados do livro');
@@ -119,7 +119,7 @@ export default function VisualizarLivro({ params }: { params: Promise<{ id: stri
     };
 
     loadLivro();
-  }, [resolvedParams, products]);
+  }, [resolvedParams]);
 
   const handleDelete = async () => {
     if (!window.confirm('Tem certeza que deseja excluir este livro?')) {
@@ -127,8 +127,16 @@ export default function VisualizarLivro({ params }: { params: Promise<{ id: stri
     }
 
     try {
-      // Aqui você implementaria a lógica para excluir o livro
-      console.log('Excluindo livro:', resolvedParams?.id);
+      const response = await fetch(`/api/admin/livros/${resolvedParams?.id}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        alert(data.error || 'Erro ao excluir livro');
+        return;
+      }
       
       // Redirecionar para a lista de livros
       window.location.href = '/admin/livros';
@@ -229,7 +237,7 @@ export default function VisualizarLivro({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (!livro) {
+  if (!isLoading && !livro && !error) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">

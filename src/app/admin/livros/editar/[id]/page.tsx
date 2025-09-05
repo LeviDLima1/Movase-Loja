@@ -10,11 +10,12 @@ import {
   FaTimes,
   FaUpload,
   FaEye,
-  FaTrash
+  FaTrash,
+  FaImage
 } from 'react-icons/fa';
 import { useAdmin } from '@/contexts/AdminContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import LoadingSpinner, { Skeleton } from '@/components/ui/LoadingSpinner';
-import { Livro } from '@/hooks/useLivros';
 
 interface LivroForm {
   titulo: string;
@@ -32,6 +33,9 @@ interface LivroForm {
   peso: string;
   dimensoes: string;
   status: 'ativo' | 'inativo';
+  destaque: boolean;
+  novidade: boolean;
+  promocao: boolean;
 }
 
 const categorias = [
@@ -43,54 +47,11 @@ const categorias = [
 const formatos = ['Físico', 'Digital', 'Ambos'];
 const idiomas = ['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano'];
 
-// Mock data para demonstração (será substituído por dados reais)
-const mockLivros = [
-  {
-    id: '1',
-    titulo: 'Aventuras Fantásticas',
-    autor: 'João Silva',
-    descricao: 'Uma história emocionante de aventuras e descobertas.',
-    preco: 89.90,
-    estoque: 15,
-    categoria: 'Ficção',
-    isbn: '978-85-0000-000-1',
-    paginas: '320',
-    editora: 'Editora ABC',
-    anoPublicacao: '2024',
-    idioma: 'Português',
-    formato: 'Físico',
-    peso: '0.5',
-    dimensoes: '16x23cm',
-    status: 'ativo' as const,
-    dataCriacao: '2024-01-10',
-    vendas: 23
-  },
-  {
-    id: '2',
-    titulo: 'Mistério do Século',
-    autor: 'Maria Santos',
-    descricao: 'Um mistério envolvente que mantém o leitor em suspense até o final.',
-    preco: 129.90,
-    estoque: 8,
-    categoria: 'Mistério',
-    isbn: '978-85-0000-000-2',
-    paginas: '280',
-    editora: 'Editora XYZ',
-    anoPublicacao: '2023',
-    idioma: 'Português',
-    formato: 'Físico',
-    peso: '0.4',
-    dimensoes: '14x21cm',
-    status: 'ativo' as const,
-    dataCriacao: '2024-01-08',
-    vendas: 15
-  }
-];
-
 export default function EditarLivro({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { state } = useAdmin();
+  const { state, actions } = useAdmin();
   const { products } = state;
+  const { addSuccessNotification, addErrorNotification } = useNotifications();
   
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
   const [formData, setFormData] = useState<LivroForm>({
@@ -104,16 +65,22 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
     paginas: '',
     editora: '',
     anoPublicacao: '',
-    idioma: '',
-    formato: '',
+    idioma: 'Português',
+    formato: 'Físico',
     peso: '',
     dimensoes: '',
-    status: 'ativo'
+    status: 'ativo',
+    destaque: false,
+    novidade: false,
+    promocao: false
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFront, setImageFront] = useState<File | null>(null);
+  const [imageBack, setImageBack] = useState<File | null>(null);
+  const [imageFrontPreview, setImageFrontPreview] = useState<string | null>(null);
+  const [imageBackPreview, setImageBackPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Resolver params
@@ -133,9 +100,8 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
       try {
         setIsLoading(true);
         
-        // Buscar livro nos dados do contexto ou mock
-        const livros = products.length > 0 ? (products as unknown as Livro[]) : mockLivros;
-        const livro = livros.find(l => l.id === resolvedParams.id);
+        // Buscar livro nos dados do contexto
+        const livro = products.find(l => l.id === resolvedParams.id);
         
         if (!livro) {
           setError('Livro não encontrado');
@@ -151,15 +117,26 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
           estoque: livro.estoque.toString(),
           categoria: livro.categoria,
           isbn: livro.isbn || '',
-          paginas: typeof livro.paginas === 'number' ? livro.paginas.toString() : livro.paginas || '',
+          paginas: livro.paginas ? livro.paginas.toString() : '',
           editora: livro.editora || '',
-          anoPublicacao: (livro as any).ano ? (livro as any).ano.toString() : '',
-          idioma: 'Português', // Valor padrão
-          formato: 'Físico', // Valor padrão
-          peso: '', // Valor padrão
-          dimensoes: '', // Valor padrão
-          status: livro.status === 'disponivel' ? 'ativo' : 'inativo'
+          anoPublicacao: livro.anoPublicacao ? livro.anoPublicacao.toString() : '',
+          idioma: livro.idioma || 'Português',
+          formato: livro.formato || 'Físico',
+          peso: livro.peso ? livro.peso.toString() : '',
+          dimensoes: livro.dimensoes || '',
+          status: livro.status,
+          destaque: livro.destaque || false,
+          novidade: livro.novidade || false,
+          promocao: livro.promocao || false
         });
+
+        // Carregar previews das imagens existentes
+        if (livro.imagemFront) {
+          setImageFrontPreview(livro.imagemFront);
+        }
+        if (livro.imagemBack) {
+          setImageBackPreview(livro.imagemBack);
+        }
 
       } catch (error) {
         console.error('Erro ao carregar livro:', error);
@@ -172,21 +149,43 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
     loadLivro();
   }, [resolvedParams, products]);
 
-  const handleInputChange = (field: keyof LivroForm, value: string) => {
+  const handleInputChange = (field: keyof LivroForm, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'front' | 'back') => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        addErrorNotification('Erro', 'Por favor, selecione apenas arquivos de imagem.');
+        return;
+      }
+
+      // Validar tamanho (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        addErrorNotification('Erro', 'A imagem deve ter no máximo 5MB.');
+        return;
+      }
+
+      if (tipo === 'front') {
+        setImageFront(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImageFrontPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setImageBack(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImageBackPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -195,38 +194,66 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
     setIsSubmitting(true);
 
     try {
-      // Aqui você implementaria a lógica para atualizar o livro
-      console.log('Dados do livro atualizados:', formData);
-      
-      // Simular delay de salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirecionar para a lista de livros após salvar
+      if (!resolvedParams) {
+        throw new Error('ID do livro não encontrado');
+      }
+
+      // Preparar dados do livro
+      const livroData = {
+        titulo: formData.titulo,
+        autor: formData.autor,
+        descricao: formData.descricao,
+        preco: parseFloat(formData.preco),
+        estoque: parseInt(formData.estoque) || 0,
+        categoria: formData.categoria,
+        isbn: formData.isbn,
+        paginas: formData.paginas ? parseInt(formData.paginas) : undefined,
+        editora: formData.editora,
+        anoPublicacao: formData.anoPublicacao ? parseInt(formData.anoPublicacao) : undefined,
+        idioma: formData.idioma,
+        formato: formData.formato,
+        peso: formData.peso ? parseFloat(formData.peso) : undefined,
+        dimensoes: formData.dimensoes,
+        status: formData.status,
+        destaque: formData.destaque,
+        novidade: formData.novidade,
+        promocao: formData.promocao
+      };
+
+      // Atualizar o livro
+      await actions.updateProduct(resolvedParams.id, livroData);
+
+      // Se houver novas imagens, fazer upload
+      if (imageFront) {
+        await actions.uploadImage(imageFront, 'front');
+      }
+      if (imageBack) {
+        await actions.uploadImage(imageBack, 'back');
+      }
+
+      addSuccessNotification('Sucesso', 'Livro atualizado com sucesso!');
       router.push('/admin/livros');
     } catch (error) {
       console.error('Erro ao atualizar livro:', error);
-      setError('Erro ao salvar alterações');
+      addErrorNotification('Erro', 'Erro ao atualizar o livro. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
+    if (!resolvedParams) return;
+
     if (confirm('Tem certeza que deseja excluir este livro? Esta ação não pode ser desfeita.')) {
       try {
         setIsSubmitting(true);
         
-        // Aqui você implementaria a lógica para excluir o livro
-        console.log('Excluindo livro:', resolvedParams?.id);
-        
-        // Simular delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Redirecionar para a lista de livros
+        await actions.deleteProduct(resolvedParams.id);
+        addSuccessNotification('Sucesso', 'Livro excluído com sucesso!');
         router.push('/admin/livros');
       } catch (error) {
         console.error('Erro ao excluir livro:', error);
-        setError('Erro ao excluir livro');
+        addErrorNotification('Erro', 'Erro ao excluir o livro. Tente novamente.');
       } finally {
         setIsSubmitting(false);
       }
@@ -327,7 +354,7 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                     type="text"
                     value={formData.titulo}
                     onChange={(e) => handleInputChange('titulo', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Digite o título do livro"
                     required
                   />
@@ -341,55 +368,8 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                     type="text"
                     value={formData.autor}
                     onChange={(e) => handleInputChange('autor', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Nome do autor"
-                    required
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descrição
-                  </label>
-                  <textarea
-                    value={formData.descricao}
-                    onChange={(e) => handleInputChange('descricao', e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="Descrição detalhada do livro"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preço *
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-500">R$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.preco}
-                      onChange={(e) => handleInputChange('preco', e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      placeholder="0,00"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estoque *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.estoque}
-                    onChange={(e) => handleInputChange('estoque', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="Quantidade em estoque"
                     required
                   />
                 </div>
@@ -401,14 +381,12 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                   <select
                     value={formData.categoria}
                     onChange={(e) => handleInputChange('categoria', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                     required
                   >
                     <option value="">Selecione uma categoria</option>
-                    {categorias.map((categoria) => (
-                      <option key={categoria} value={categoria}>
-                        {categoria}
-                      </option>
+                    {categorias.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                 </div>
@@ -420,22 +398,111 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                   <select
                     value={formData.status}
                     onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     <option value="ativo">Ativo</option>
                     <option value="inativo">Inativo</option>
                   </select>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descrição
+                </label>
+                <textarea
+                  value={formData.descricao}
+                  onChange={(e) => handleInputChange('descricao', e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Descrição detalhada do livro..."
+                />
+              </div>
+
+              {/* Flags especiais */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.destaque}
+                    onChange={(e) => handleInputChange('destaque', e.target.checked)}
+                    className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Destaque</span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.novidade}
+                    onChange={(e) => handleInputChange('novidade', e.target.checked)}
+                    className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Novidade</span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.promocao}
+                    onChange={(e) => handleInputChange('promocao', e.target.checked)}
+                    className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Promoção</span>
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Informações Técnicas */}
+          {/* Preço e Estoque */}
           <div className="bg-white rounded-lg shadow-sm border">
             <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Informações Técnicas</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Preço e Estoque</h2>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preço *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.preco}
+                      onChange={(e) => handleInputChange('preco', e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0,00"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quantidade em Estoque
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.estoque}
+                    onChange={(e) => handleInputChange('estoque', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Detalhes Técnicos */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            <div className="p-6 border-b">
+              <h2 className="text-lg font-semibold text-gray-900">Detalhes Técnicos</h2>
+            </div>
+            <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -445,8 +512,8 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                     type="text"
                     value={formData.isbn}
                     onChange={(e) => handleInputChange('isbn', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="978-85-0000-000-1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="978-0-000000-0-0"
                   />
                 </div>
 
@@ -459,8 +526,8 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                     min="1"
                     value={formData.paginas}
                     onChange={(e) => handleInputChange('paginas', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="320"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="200"
                   />
                 </div>
 
@@ -472,7 +539,7 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                     type="text"
                     value={formData.editora}
                     onChange={(e) => handleInputChange('editora', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Nome da editora"
                   />
                 </div>
@@ -487,7 +554,7 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                     max={new Date().getFullYear()}
                     value={formData.anoPublicacao}
                     onChange={(e) => handleInputChange('anoPublicacao', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="2024"
                   />
                 </div>
@@ -499,12 +566,10 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                   <select
                     value={formData.idioma}
                     onChange={(e) => handleInputChange('idioma', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
-                    {idiomas.map((idioma) => (
-                      <option key={idioma} value={idioma}>
-                        {idioma}
-                      </option>
+                    {idiomas.map(idioma => (
+                      <option key={idioma} value={idioma}>{idioma}</option>
                     ))}
                   </select>
                 </div>
@@ -516,110 +581,121 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
                   <select
                     value={formData.formato}
                     onChange={(e) => handleInputChange('formato', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
-                    {formatos.map((formato) => (
-                      <option key={formato} value={formato}>
-                        {formato}
-                      </option>
+                    {formatos.map(formato => (
+                      <option key={formato} value={formato}>{formato}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Peso (kg)
+                    Peso (gramas)
                   </label>
                   <input
                     type="number"
-                    step="0.01"
                     min="0"
                     value={formData.peso}
                     onChange={(e) => handleInputChange('peso', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="0.5"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="300"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dimensões
+                    Dimensões (cm)
                   </label>
                   <input
                     type="text"
                     value={formData.dimensoes}
                     onChange={(e) => handleInputChange('dimensoes', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="16x23cm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="15 x 21 x 2"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Upload de Imagens */}
+          {/* Imagens do Livro */}
           <div className="bg-white rounded-lg shadow-sm border">
             <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Imagens do Livro</h2>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <FaImage className="w-5 h-5 text-blue-600 mr-3" />
+                Imagens do Livro
+              </h2>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Imagem da Capa */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Capa Frontal
+                    Imagem da Capa
                   </label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                    <div className="space-y-1 text-center">
-                      <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500">
-                          <span>Fazer upload</span>
-                          <input
-                            type="file"
-                            className="sr-only"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                          />
-                        </label>
-                        <p className="pl-1">ou arraste e solte</p>
+                  <div className="space-y-4">
+                    <label className="cursor-pointer">
+                      <div className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer text-center">
+                        <FaUpload className="w-4 h-4 text-gray-500 mr-2 inline" />
+                        Selecionar Nova Imagem da Capa
                       </div>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF até 10MB</p>
-                    </div>
-                  </div>
-                  {imagePreview && (
-                    <div className="mt-4">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-32 h-40 object-cover rounded-lg border"
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'front')}
+                        className="hidden"
                       />
-                    </div>
-                  )}
+                    </label>
+                    
+                    {imageFrontPreview && (
+                      <div className="mt-4">
+                        <img
+                          src={imageFrontPreview}
+                          alt="Capa do livro"
+                          className="w-32 h-40 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
+                {/* Imagem da Contracapa */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Capa Traseira
+                    Imagem da Contracapa (Opcional)
                   </label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                    <div className="space-y-1 text-center">
-                      <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500">
-                          <span>Fazer upload</span>
-                          <input
-                            type="file"
-                            className="sr-only"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                          />
-                        </label>
-                        <p className="pl-1">ou arraste e solte</p>
+                  <div className="space-y-4">
+                    <label className="cursor-pointer">
+                      <div className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer text-center">
+                        <FaUpload className="w-4 h-4 text-gray-500 mr-2 inline" />
+                        Selecionar Nova Imagem da Contracapa
                       </div>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF até 10MB</p>
-                    </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'back')}
+                        className="hidden"
+                      />
+                    </label>
+                    
+                    {imageBackPreview && (
+                      <div className="mt-4">
+                        <img
+                          src={imageBackPreview}
+                          alt="Contracapa do livro"
+                          className="w-32 h-40 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
+              </div>
+              
+              <div className="mt-4 text-sm text-gray-500">
+                <p>Formatos aceitos: PNG, JPG, JPEG, WebP</p>
+                <p>Tamanho máximo: 5MB por imagem</p>
+                <p>Deixe em branco para manter a imagem atual</p>
               </div>
             </div>
           </div>
@@ -639,7 +715,7 @@ export default function EditarLivro({ params }: { params: Promise<{ id: string }
               disabled={!isFormValid || isSubmitting}
               className={`px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer ${
                 isFormValid && !isSubmitting
-                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >

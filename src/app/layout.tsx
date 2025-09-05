@@ -6,6 +6,7 @@ import { ToastProvider } from '../context/ToastContext';
 import { AdminProvider } from '../contexts/AdminContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { AuthProvider } from '../contexts/AuthContext';
+import { WishlistProvider } from '../contexts/WishlistContext';
 import CartModal from '../components/CartModal';
 import FloatingCart from '../components/FloatingCart';
 
@@ -47,13 +48,15 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             <CartProvider>
-              <AdminProvider>
-                <NotificationProvider>
-                  {children}
-                  <CartModal />
-                  <FloatingCart />
-                </NotificationProvider>
-              </AdminProvider>
+              <WishlistProvider>
+                <AdminProvider>
+                  <NotificationProvider>
+                    {children}
+                    <CartModal />
+                    <FloatingCart />
+                  </NotificationProvider>
+                </AdminProvider>
+              </WishlistProvider>
             </CartProvider>
           </ToastProvider>
         </AuthProvider>
