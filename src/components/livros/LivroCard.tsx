@@ -35,12 +35,14 @@ export default function LivroCard({ livro }: LivroCardProps) {
   const getStatusBadge = () => {
     switch (livro.status) {
       case 'disponivel':
+      case 'ativo':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
             Disponível
           </span>
         );
       case 'indisponivel':
+      case 'inativo':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
             Indisponível
@@ -193,7 +195,7 @@ export default function LivroCard({ livro }: LivroCardProps) {
               img1: livro.imagemFront
             }}
             status={livro.status}
-            disabled={livro.status !== 'disponivel'}
+            disabled={livro.status !== 'disponivel' && livro.status !== 'ativo'}
             className="flex-1"
           />
         </div>

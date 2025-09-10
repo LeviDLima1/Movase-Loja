@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Heart, HeartOff, Loader2 } from 'lucide-react';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useNotification } from '../contexts/NotificationContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 interface WishlistButtonProps {
   livro: {
@@ -34,7 +34,7 @@ export default function WishlistButton({
 }: WishlistButtonProps) {
   const { isInWishlist, addToWishlist, removeFromWishlist, loading } = useWishlist();
   const { isAuthenticated } = useAuth();
-  const { addSuccessNotification, addErrorNotification } = useNotification();
+  const { addSuccessNotification, addErrorNotification } = useNotifications();
   const [isLoading, setIsLoading] = useState(false);
 
   const isInWishlistItem = isInWishlist(livro.id);
@@ -47,14 +47,14 @@ export default function WishlistButton({
     try {
       if (isInWishlistItem) {
         await removeFromWishlist(livro.id);
-        addSuccessNotification('Item removido da lista de desejos!', 'success');
+        addSuccessNotification('Sucesso!', 'Item removido da lista de desejos!');
       } else {
         await addToWishlist(livro);
-        addSuccessNotification('Item adicionado à lista de desejos!', 'success');
+        addSuccessNotification('Sucesso!', 'Item adicionado à lista de desejos!');
       }
     } catch (error) {
       console.error('Erro ao alterar wishlist:', error);
-      addErrorNotification('Erro ao alterar lista de desejos. Tente novamente.');
+      addErrorNotification('Erro!', 'Erro ao alterar lista de desejos. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +62,7 @@ export default function WishlistButton({
 
   const handleClick = () => {
     if (!isAuthenticated) {
-      addErrorNotification('Faça login para usar a lista de desejos!');
+      addErrorNotification('Atenção!', 'Faça login para usar a lista de desejos!');
       return;
     }
     handleToggleWishlist();

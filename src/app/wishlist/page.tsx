@@ -4,7 +4,7 @@ import React from 'react';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { useNotification } from '../../contexts/NotificationContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { Heart, ShoppingCart, Trash2, Loader2, BookOpen, User } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,14 +13,14 @@ export default function WishlistPage() {
   const { items, removeFromWishlist, clearWishlist, loading, error } = useWishlist();
   const { isAuthenticated, user } = useAuth();
   const { addToCart } = useCart();
-  const { addSuccessNotification, addErrorNotification } = useNotification();
+  const { addSuccessNotification, addErrorNotification } = useNotifications();
 
   const handleRemoveFromWishlist = async (id: number) => {
     try {
       await removeFromWishlist(id);
-      addSuccessNotification('Item removido da lista de desejos!', 'success');
+      addSuccessNotification('Sucesso!', 'Item removido da lista de desejos!');
     } catch (error) {
-      addErrorNotification('Erro ao remover item. Tente novamente.');
+      addErrorNotification('Erro!', 'Erro ao remover item. Tente novamente.');
     }
   };
 
@@ -28,9 +28,9 @@ export default function WishlistPage() {
     if (window.confirm('Tem certeza que deseja limpar toda a lista de desejos?')) {
       try {
         await clearWishlist();
-        addSuccessNotification('Lista de desejos limpa!', 'success');
+        addSuccessNotification('Sucesso!', 'Lista de desejos limpa!');
       } catch (error) {
-        addErrorNotification('Erro ao limpar lista. Tente novamente.');
+        addErrorNotification('Erro!', 'Erro ao limpar lista. Tente novamente.');
       }
     }
   };
@@ -44,9 +44,9 @@ export default function WishlistPage() {
         price: livro.price,
         img1: livro.img1,
       });
-      addSuccessNotification('Item adicionado ao carrinho!', 'success');
+      addSuccessNotification('Sucesso!', 'Item adicionado ao carrinho!');
     } catch (error) {
-      addErrorNotification('Erro ao adicionar ao carrinho. Tente novamente.');
+      addErrorNotification('Erro!', 'Erro ao adicionar ao carrinho. Tente novamente.');
     }
   };
 

@@ -30,8 +30,7 @@ export default function AdminLivros() {
   console.log('🔄 AdminLivros renderizando:', { 
     productsCount: products.length, 
     loading: isLoading, 
-    error, 
-    initialized: state.initialized 
+    error
   });
 
   // Filtrar livros baseado nos filtros aplicados

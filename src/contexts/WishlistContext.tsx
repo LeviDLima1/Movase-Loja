@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
 import { WishlistItem, WishlistContextType } from '../types/wishlist';
-import { wishlistService, WishlistResponse } from '../services/wishlistService';
+import { WishlistService } from '../services/wishlistService';
+import { WishlistResponse } from '../types/wishlist';
 import { useAuth } from './AuthContext';
 
 // LocalStorage key (para fallback quando não autenticado)
@@ -121,7 +122,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       try {
         if (isAuthenticated && user) {
           // Usar backend
-          const response = await wishlistService.getWishlist();
+          const response = await WishlistService.getWishlist();
           if (response.success && response.data) {
             const wishlistItems = response.data.items || [];
             dispatch({ type: 'LOAD_WISHLIST', payload: wishlistItems });
@@ -215,7 +216,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && user) {
       // Usar backend
       try {
-        const response = await wishlistService.addItem(livro);
+        const response = await WishlistService.addItem(livro);
         
         if (response.success && response.data) {
           const wishlistItems = response.data.items || [];
@@ -242,7 +243,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && user) {
       // Usar backend
       try {
-        const response = await wishlistService.removeItem(id);
+        const response = await WishlistService.removeItem(id);
         
         if (response.success && response.data) {
           const wishlistItems = response.data.items || [];
@@ -265,7 +266,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && user) {
       // Usar backend
       try {
-        const response = await wishlistService.clearWishlist();
+        const response = await WishlistService.clearWishlist();
         
         if (response.success) {
           dispatch({ type: 'LOAD_WISHLIST', payload: [] });

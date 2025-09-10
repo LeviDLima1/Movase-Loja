@@ -1,24 +1,35 @@
-// ===== SERVIÇO DE CARRINHO - Conexão com Backend =====
+/**
+ * CART SERVICE - Novo Serviço do Carrinho (Frontend)
+ * 
+ * Integração com a nova API de carrinho:
+ * - Endpoints padronizados
+ * - Tratamento de erros
+ * - Tipos TypeScript
+ * - Validação de dados
+ */
 
 import { apiService } from './api';
 
-// Interfaces
+// ===== TIPOS =====
+
 export interface CartItem {
+  id: number;
   bookId: number;
-  quantity: number;
+  quantidade: number;
   preco: number;
   subtotal: number;
   titulo: string;
   autor: string;
-  imagemFront?: string;
+  imagemFront: string;
+  adicionadoEm: string;
   book?: {
     id: number;
     titulo: string;
     autor: string;
     preco: number;
     estoque: number;
-    imagemFront?: string;
-    imagemBack?: string;
+    imagemFront: string;
+    imagemBack: string;
   };
 }
 
@@ -35,6 +46,8 @@ export interface Cart {
   freteSelecionado?: any;
   status: string;
   itemCount: number;
+  ultimaAtualizacao: string;
+  expiraEm: string;
 }
 
 export interface AddItemData {
@@ -54,8 +67,10 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-class CartService {
-  private baseUrl = '/cart';
+// ===== SERVIÇO =====
+
+class CartServiceNew {
+  private baseUrl = '/cart-new';
 
   /**
    * Obter carrinho do usuário
@@ -64,7 +79,6 @@ class CartService {
     try {
       const response = await apiService.get<any>(this.baseUrl);
       
-      // Ajustar estrutura da resposta do backend
       if (response.success && response.data && response.data.cart) {
         return {
           success: true,
@@ -87,20 +101,15 @@ class CartService {
    */
   async addItem(data: AddItemData): Promise<ApiResponse<Cart>> {
     try {
-      console.log('🛒 cartService.addItem chamado com:', data);
       const response = await apiService.post<any>(`${this.baseUrl}/items`, data);
-      console.log('📡 Resposta do backend:', response);
       
-      // Ajustar estrutura da resposta do backend
       if (response.success && response.data && response.data.cart) {
-        console.log('✅ Estrutura de resposta válida, retornando cart:', response.data.cart);
         return {
           success: true,
           data: response.data.cart
         };
       }
       
-      console.log('⚠️ Estrutura de resposta inválida, retornando resposta original:', response);
       return response;
     } catch (error) {
       console.error('Erro ao adicionar item:', error);
@@ -118,7 +127,6 @@ class CartService {
     try {
       const response = await apiService.put<any>(`${this.baseUrl}/items`, data);
       
-      // Ajustar estrutura da resposta do backend
       if (response.success && response.data && response.data.cart) {
         return {
           success: true,
@@ -143,7 +151,6 @@ class CartService {
     try {
       const response = await apiService.delete<any>(`${this.baseUrl}/items/${bookId}`);
       
-      // Ajustar estrutura da resposta do backend
       if (response.success && response.data && response.data.cart) {
         return {
           success: true,
@@ -168,7 +175,6 @@ class CartService {
     try {
       const response = await apiService.delete<any>(this.baseUrl);
       
-      // Ajustar estrutura da resposta do backend
       if (response.success && response.data && response.data.cart) {
         return {
           success: true,
@@ -187,29 +193,29 @@ class CartService {
   }
 
   /**
-   * Formatar preço
+   * Validar carrinho
    */
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
-  }
-
-  /**
-   * Calcular total de itens
-   */
-  getItemCount(items: CartItem[]): number {
-    return items.reduce((total, item) => total + item.quantity, 0);
-  }
-
-  /**
-   * Verificar se carrinho está vazio
-   */
-  isEmpty(items: CartItem[]): boolean {
-    return items.length === 0;
+  async validateCart(): Promise<ApiResponse<any>> {
+    try {
+      const response = await apiService.post<any>(`${this.baseUrl}/validate`);
+      
+      if (response.success && response.data && response.data.validation) {
+        return {
+          success: true,
+          data: response.data.validation
+        };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Erro ao validar carrinho:', error);
+      return {
+        success: false,
+        error: 'Erro ao validar carrinho'
+      };
+    }
   }
 }
 
-export const cartService = new CartService();
-export default cartService;
+export const cartServiceNew = new CartServiceNew();
+export default cartServiceNew;

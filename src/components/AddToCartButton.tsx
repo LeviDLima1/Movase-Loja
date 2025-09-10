@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { CartItem } from '../types/cart';
 import { ShoppingCart, Check, Loader2 } from 'lucide-react';
 
@@ -15,32 +15,44 @@ interface AddToCartButtonProps {
 
 export default function AddToCartButton({ livro, className = '', disabled = false, status }: AddToCartButtonProps) {
   const { addToCart, openCart } = useCart();
-  const { showToast } = useToast();
+  const { addSuccessNotification, addErrorNotification } = useNotifications();
   const [isAdding, setIsAdding] = useState(false);
 
   // Verifica se o livro está disponível
-  const isAvailable = status === 'disponivel' && !disabled;
+  const isAvailable = (status === 'disponivel' || status === 'ativo') && !disabled;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (isAdding) return; // Previne cliques múltiplos
     
     if (!isAvailable) {
       // Mostra mensagem de erro para livros indisponíveis
-      showToast(`${livro.titulo} não está disponível no momento`, 'error', 3000, 'Item Indisponível');
+      addErrorNotification('Item Indisponível', `${livro.titulo} não está disponível no momento`);
       return;
     }
     
     setIsAdding(true);
-    addToCart(livro);
-    openCart();
     
-    // Feedback visual
-    showToast(`${livro.titulo} adicionado ao carrinho!`, 'success', 3000, 'Item Adicionado');
-    
-    // Reset após um breve delay
-    setTimeout(() => setIsAdding(false), 1000);
+    try {
+      // Garantir que o preço seja number
+      const normalizedLivro = {
+        ...livro,
+        price: typeof livro.price === 'string' ? parseFloat(livro.price) : livro.price
+      };
+      
+      await addToCart(normalizedLivro);
+      openCart();
+      
+      // Feedback visual
+      addSuccessNotification('Item Adicionado', `${livro.titulo} adicionado ao carrinho!`);
+    } catch (error) {
+      console.error('Erro ao adicionar ao carrinho:', error);
+      addErrorNotification('Erro', 'Erro ao adicionar item ao carrinho. Tente novamente.');
+    } finally {
+      // Reset após um breve delay
+      setTimeout(() => setIsAdding(false), 1000);
+    }
   };
 
   return (

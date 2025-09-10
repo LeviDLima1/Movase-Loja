@@ -123,27 +123,22 @@ export function useLivros() {
     }
   }, []); // Removida a dependência de filtros para evitar loop
 
-  // Função para buscar na primeira carga
-  const buscarLivrosIniciais = useCallback(async () => {
-    await buscarLivros();
-  }, []);
-
   // Função para aplicar filtros
   const aplicarFiltros = useCallback((novosFiltros: Partial<FiltrosLivros>) => {
     const filtrosAtualizados = { ...filtros, ...novosFiltros, page: '1' };
     buscarLivros(filtrosAtualizados);
-  }, [filtros]);
+  }, [filtros, buscarLivros]);
 
   // Função para limpar filtros
   const limparFiltros = useCallback(() => {
     const filtrosLimpos = { limit: '12', page: '1' };
     buscarLivros(filtrosLimpos);
-  }, []);
+  }, [buscarLivros]);
 
   // Função para mudar página
   const mudarPagina = useCallback((novaPagina: number) => {
     buscarLivros({ page: novaPagina.toString() });
-  }, []);
+  }, [buscarLivros]);
 
   // Função para buscar por texto
   const buscarPorTexto = useCallback((termo: string) => {
@@ -187,8 +182,8 @@ export function useLivros() {
 
   // Carregar livros na primeira renderização
   useEffect(() => {
-    buscarLivrosIniciais();
-  }, [buscarLivrosIniciais]);
+    buscarLivros();
+  }, []);
 
   return {
     // Estado

@@ -5,6 +5,7 @@ import Footer from '@/components/footer/page';
 import { useLivros } from '@/hooks/useLivros';
 import LivroCard from '@/components/livros/LivroCard';
 import { Loader2, Star, TrendingUp, Tag } from 'lucide-react';
+import { Suspense } from 'react';
 
 // Componente específico para a home
 function HomeLivrosVitrine() {
@@ -119,7 +120,16 @@ export default function Home() {
             </p>
           </div>
           
-          <HomeLivrosVitrine />
+          <Suspense fallback={
+            <div className="flex justify-center py-12">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin text-red-600" />
+                <span className="text-gray-600">Carregando livros...</span>
+              </div>
+            </div>
+          }>
+            <HomeLivrosVitrine />
+          </Suspense>
         </div>
       </div>
 

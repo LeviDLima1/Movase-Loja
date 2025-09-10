@@ -2,11 +2,11 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
 import { CartItem, CartContextType } from '../types/cart';
-import { cartService, Cart as BackendCart } from '../services/cartService';
+import { cartServiceNew, Cart as BackendCart, CartItem as BackendCartItem } from '../services/cartServiceNew';
 import { useAuth } from '../contexts/AuthContext';
 
 // LocalStorage key (para fallback quando não autenticado)
-const CART_STORAGE_KEY = 'movase-cart';
+const CART_STORAGE_KEY = 'movase-cart-new';
 
 // Função para validar estrutura dos dados do carrinho
 function validateCartData(data: any): data is CartItem[] {
@@ -56,15 +56,11 @@ const initialState: CartState = {
 
 // Reducer
 function cartReducer(state: CartState, action: CartAction): CartState {
-  console.log('🔄 cartReducer chamado com action:', action.type, action.payload);
-  
   switch (action.type) {
     case 'ADD_ITEM': {
-      console.log('➕ ADD_ITEM - estado atual:', state.items.length, 'itens');
       const existingItem = state.items.find(item => item.id === action.payload.id);
       
       if (existingItem) {
-        console.log('🔄 Item já existe, incrementando quantidade');
         return {
           ...state,
           items: state.items.map(item =>
@@ -75,13 +71,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         };
       }
       
-      console.log('➕ Adicionando novo item ao carrinho');
-      const newState = {
+      return {
         ...state,
         items: [...state.items, { ...action.payload, quantity: 1 }],
       };
-      console.log('✅ Novo estado:', newState.items.length, 'itens');
-      return newState;
     }
     
     case 'REMOVE_ITEM':
@@ -145,9 +138,39 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 // Provider
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProviderNew({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const { user, isAuthenticated } = useAuth();
+
+  // Função para carregar do localStorage
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (validateCartData(parsed)) {
+          dispatch({ type: 'LOAD_CART', payload: parsed });
+        } else {
+          console.warn('Dados inválidos no localStorage, limpando...');
+          localStorage.removeItem(CART_STORAGE_KEY);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar carrinho do localStorage:', error);
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
+  }, []);
+
+  // Função para salvar no localStorage
+  const saveToLocalStorage = useCallback((items: CartItem[]) => {
+    try {
+      if (typeof window !== 'undefined' && !isAuthenticated) {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      }
+    } catch (error) {
+      console.error('Erro ao salvar carrinho no localStorage:', error);
+    }
+  }, [isAuthenticated]);
 
   // Carregar carrinho do backend quando autenticado, ou localStorage quando não
   useEffect(() => {
@@ -164,17 +187,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         if (isAuthenticated && user) {
           // Usar backend
-          const response = await cartService.getCart();
+          const response = await cartServiceNew.getCart();
           if (response.success && response.data) {
             // Converter dados do backend para formato do frontend
             const cartItems = response.data.items || [];
-            const frontendItems: CartItem[] = cartItems.map((item: any) => ({
+            const frontendItems: CartItem[] = cartItems.map((item: BackendCartItem) => ({
               id: item.bookId,
               titulo: item.titulo,
               autor: item.autor,
               price: item.preco,
               img1: item.imagemFront || '',
-              quantity: item.quantity
+              quantity: item.quantidade
             }));
             
             dispatch({ type: 'LOAD_CART', payload: frontendItems });
@@ -189,7 +212,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Erro ao carregar carrinho:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Erro ao carregar carrinho' });
         // Fallback para localStorage
         loadFromLocalStorage();
       } finally {
@@ -197,100 +219,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const loadFromLocalStorage = () => {
-      try {
-        const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-        if (savedCart) {
-          const parsedCart = JSON.parse(savedCart);
-          
-          // Converter preços de string para number se necessário
-          const normalizedCart = parsedCart.map((item: any) => ({
-            ...item,
-            price: typeof item.price === 'string' ? parseFloat(item.price) : item.price
-          }));
-          
-          // Validação completa dos dados
-          if (validateCartData(normalizedCart)) {
-            dispatch({ type: 'LOAD_CART', payload: normalizedCart });
-          } else {
-            console.warn('Dados do carrinho inválidos ou corrompidos, iniciando carrinho vazio');
-            localStorage.removeItem(CART_STORAGE_KEY);
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao carregar carrinho do localStorage:', error);
-        // Limpar dados corrompidos
-        try {
-          localStorage.removeItem(CART_STORAGE_KEY);
-        } catch (removeError) {
-          console.error('Erro ao limpar localStorage corrompido:', removeError);
-        }
-      }
-    };
+    loadCart();
+  }, [isAuthenticated, user, loadFromLocalStorage]);
 
-    // Pequeno delay para garantir que localStorage está disponível
-    const timer = setTimeout(() => {
-      loadCart();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, user]);
-
-  // Função debounced para salvar no localStorage (apenas quando não autenticado)
-  const saveToLocalStorage = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (items: CartItem[]) => {
-        console.log('💾 saveToLocalStorage chamado com:', items.length, 'itens');
-        console.log('🔐 isAuthenticated:', isAuthenticated);
-        console.log('🌐 typeof window:', typeof window);
-        
-        // Verificar se estamos no cliente e não autenticado
-        if (typeof window !== 'undefined' && !isAuthenticated) {
-          console.log('💾 Salvando no localStorage...');
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            try {
-              const dataToSave = JSON.stringify(items);
-              console.log('💾 Dados para salvar:', dataToSave);
-              localStorage.setItem(CART_STORAGE_KEY, dataToSave);
-              console.log('✅ Carrinho salvo no localStorage');
-            } catch (error) {
-              console.error('Erro ao salvar carrinho no localStorage:', error);
-              // Se localStorage estiver cheio, tenta limpar e salvar novamente
-              try {
-                localStorage.clear();
-                localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-                console.log('✅ Carrinho salvo após limpeza do localStorage');
-              } catch (retryError) {
-                console.error('Erro ao tentar salvar carrinho após limpeza:', retryError);
-              }
-            }
-          }, 500); // Debounce de 500ms
-        } else {
-          console.log('⏭️ Pulando salvamento no localStorage (autenticado ou SSR)');
-        }
-      };
-    })(),
-    [isAuthenticated]
-  );
-
-  // Salvar carrinho no localStorage com debounce (apenas quando não autenticado)
+  // Salvar no localStorage quando não autenticado
   useEffect(() => {
     saveToLocalStorage(state.items);
   }, [state.items, saveToLocalStorage]);
 
   // Funções do carrinho
   const addToCart = async (livro: Omit<CartItem, 'quantity'>) => {
-    console.log('🛒 addToCart chamado com:', livro);
-    console.log('🔐 isAuthenticated:', isAuthenticated);
-    console.log('👤 user:', user);
-    
     if (isAuthenticated && user) {
       // Usar backend
-      console.log('🌐 Usando backend para adicionar ao carrinho');
       try {
-        const response = await cartService.addItem({
+        const response = await cartServiceNew.addItem({
           bookId: livro.id,
           quantity: 1
         });
@@ -303,11 +245,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             autor: item.autor,
             price: item.preco,
             img1: item.imagemFront || '',
-            quantity: item.quantity
+            quantity: item.quantidade
           }));
           
           dispatch({ type: 'LOAD_CART', payload: frontendItems });
-          console.log('✅ Item adicionado ao carrinho via backend');
         } else {
           console.error('Erro ao adicionar item ao carrinho:', response.error);
           dispatch({ type: 'SET_ERROR', payload: response.error || 'Erro ao adicionar item' });
@@ -320,22 +261,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     } else {
       // Usar localStorage quando não autenticado
-      console.log('💾 Usando localStorage para adicionar ao carrinho');
-      try {
-        // Garantir que o preço seja number
-        const normalizedLivro = {
-          ...livro,
-          price: typeof livro.price === 'string' ? parseFloat(livro.price) : livro.price
-        };
-        
-        console.log('📦 Item normalizado:', normalizedLivro);
-        dispatch({ type: 'ADD_ITEM', payload: normalizedLivro });
-        console.log('✅ Item adicionado ao carrinho via localStorage');
-      } catch (error) {
-        console.error('Erro ao adicionar item ao carrinho (localStorage):', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Erro ao adicionar item ao carrinho' });
-        throw error;
-      }
+      dispatch({ type: 'ADD_ITEM', payload: livro });
     }
   };
 
@@ -343,7 +269,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && user) {
       // Usar backend
       try {
-        const response = await cartService.removeItem(id);
+        const response = await cartServiceNew.removeItem(id);
         
         if (response.success && response.data) {
           // Converter dados do backend para formato do frontend
@@ -353,7 +279,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             autor: item.autor,
             price: item.preco,
             img1: item.imagemFront || '',
-            quantity: item.quantity
+            quantity: item.quantidade
           }));
           
           dispatch({ type: 'LOAD_CART', payload: frontendItems });
@@ -375,9 +301,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && user) {
       // Usar backend
       try {
-        const response = await cartService.updateQuantity({
+        const response = await cartServiceNew.updateQuantity({
           bookId: id,
-          quantity
+          quantity: quantity
         });
         
         if (response.success && response.data) {
@@ -388,7 +314,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             autor: item.autor,
             price: item.preco,
             img1: item.imagemFront || '',
-            quantity: item.quantity
+            quantity: item.quantidade
           }));
           
           dispatch({ type: 'LOAD_CART', payload: frontendItems });
@@ -410,7 +336,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && user) {
       // Usar backend
       try {
-        const response = await cartService.clearCart();
+        const response = await cartServiceNew.clearCart();
         
         if (response.success && response.data) {
           dispatch({ type: 'LOAD_CART', payload: [] });
@@ -470,10 +396,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Hook personalizado
-export function useCart() {
+export function useCartNew() {
   const context = useContext(CartContext);
   if (context === undefined) {
-    throw new Error('useCart deve ser usado dentro de um CartProvider');
+    throw new Error('useCartNew deve ser usado dentro de um CartProviderNew');
   }
   return context;
 }
